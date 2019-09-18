@@ -1,0 +1,26 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1568839137495.000,
+    "dirty" : false,
+    "encoding" : "",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "5684FC6E",
+    "lastKnownWriteTime" : 7310587260598578286,
+    "last_content_update" : 1568839137495,
+    "path" : null,
+    "project_path" : null,
+    "properties" : {
+        "id" : "d5a1e89d5ead46bd8bfb7da6fe9b98a2",
+        "name" : "zones_data",
+        "title" : "zones_data"
+    },
+    "read_only" : false,
+    "read_only_alternatives" : [
+    ],
+    "relative_order" : 3,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "object_explorer"
+}
