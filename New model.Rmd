@@ -22,6 +22,13 @@ install.packages("rgdal")
 install.packages("ggmap")
 ```
 
+```{r}
+install.packages("Rcpp")
+install.packages("hdf5r")
+
+```
+
+
 
 ```{r}
 library(sf)
@@ -64,4 +71,21 @@ save(zones_data, file="data/zones_data.Rdata")
 load("data/CT.Rdata")
 load("data/zones_data.Rdata")
 ```
+
+```{r}
+library(hdf5r)
+library(h5)
+dater <- h5file( "Sus_date.h5", 'a')
+list.datasets(dater, recursive = TRUE)
+dater['testgroup/testset'] <- matrix(1:9, nrow = 3)
+dater['testgroup/testset2'] <- matrix(1:33, nrow = 3)
+dater['testgroup']
+
+#install.packages("BiocManager")
+#BiocManager::install("rhdf5")
+h5createFile("myhdf5file.h5")
+df<- matrix(1:9, nrow = 3)
+h5write(df, "myhdf5file.h5","df")
+```
+
 

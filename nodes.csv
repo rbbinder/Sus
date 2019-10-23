@@ -1,0 +1,8 @@
+name,ID,node_group,,,,
+Census Variable 1 (eg Median Household Income),0,1,,,,
+Census Variable 2 (eg % of renters),1,1,,,,
+Quantile Bins,2,2,,,,
+Bivariate Map,3,3,,,,
+Census Variable,4,1,,,,
+CANSIM Tables,5,1,,,,
+Quantile Bins,6,2,,,,
