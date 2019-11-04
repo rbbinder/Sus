@@ -92,7 +92,7 @@ plot(CanALE_space[33])
 # red for gini and blue for mean income
 # the special notation with gather is due to readibility reasons
 bivariate_color_scale <- tibble(
-  "3 - 3" = "#3F2949", # high transit, high income
+  "3 - 3" = "#3F2949", # high transit, relative high income
   "2 - 3" = "#435786",
   "1 - 3" = "#4885C1", # low transit, high income
   "3 - 2" = "#77324C",
