@@ -1,7 +1,0 @@
-source,target,value,group_type,,,
-0,2,0.01,possible indexing,,,
-1,2,0.01,possible indexing,,,
-2,3,0.02,make bivariate,,,
-4,6,0.01,,,,
-5,6,0.01,join to census if missing spatial,,,
-6,3,0.02,make bivariate,,,

@@ -1,0 +1,91 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r, eval=FALSE}
+install.packages("devtools")
+devtools::install_github("Nowosad/spDataLarge")
+install.packages("shinythemes")
+install.packages("shiny")
+install.packages("leaflet")
+install.packages("geojsonio")
+install.packages("plotly")
+install.packages("RColorBrewer")
+install.packages("viridis")
+install.packages("ggplot2")
+install.packages("reshape2")
+install.packages("raster")
+install.packages("rasterVis")
+install.packages("sjPlot")
+install.packages("rgdal")
+install.packages("ggmap")
+```
+
+```{r}
+install.packages("Rcpp")
+install.packages("hdf5r")
+
+```
+
+
+
+```{r}
+library(sf)
+library(dplyr)
+library(stplanr)        # geographic transport data package
+library(tmap)           # visualization package (see Chapter 8)     
+library(spDataLarge)
+library(shinythemes)
+library(shiny)
+library(leaflet)
+library(leaflet.extras)
+library(geojsonio)
+library(plotly)
+library(RColorBrewer)
+library(viridis)
+library(ggplot2)
+library(reshape2)
+library(raster)
+library(rasterVis)
+library(sjPlot)
+library(rgdal)
+library(ggmap)
+
+```
+
+```{r}
+CT <- geojsonio::geojson_read("data/TractPolygonsCompressed.json", what="sp")
+#subselect Montreal Area
+CT <- CT[CT@data$CMANAME == "Montral",]
+save(CT, file= "data/CT.Rdata")
+```
+
+```{r}
+zones_data <- geojsonio::geojson_read("data/TractTractLinesCompressed.json", what="sp")
+zones_data <- zones_data[zones_data@data$Origin == "Montral",]  #still we should find a column represent Montreal for sub selection
+save(zones_data, file="data/zones_data.Rdata")
+```
+
+```{r}
+load("data/CT.Rdata")
+load("data/zones_data.Rdata")
+```
+
+```{r}
+library(hdf5r)
+library(h5)
+dater <- h5file( "Sus_date.h5", 'a')
+list.datasets(dater, recursive = TRUE)
+dater['testgroup/testset'] <- matrix(1:9, nrow = 3)
+dater['testgroup/testset2'] <- matrix(1:33, nrow = 3)
+dater['testgroup']
+
+#install.packages("BiocManager")
+#BiocManager::install("rhdf5")
+h5createFile("myhdf5file.h5")
+df<- matrix(1:9, nrow = 3)
+h5write(df, "myhdf5file.h5","df")
+```
+
+
