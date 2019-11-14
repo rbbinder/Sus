@@ -1,0 +1,49 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+```{r}
+print("hello world")
+```
+
+```{r}
+hw <- function(){print("hello world")}
+hw()
+```
+```{r}
+hw <- function(df, V1 = Imm, V2 = Pop, V3= Bicycle){
+  
+ 
+  df2 <- df %>% 
+  rowwise() %>% 
+  mutate(pct_Imm = V1/V2) %>% 
+  mutate(pct_active_trans = sum(Bicycle, Walked)/Mode) %>% 
+  mutate(pct_under40k = sum(Under_5k, IN5k_10k, IN10k_15k, IN15k, IN20k_25k, IN25k_30k, IN30k_35k, IN35k_40k)/Households) %>% 
+   mutate(pct_over40k = sum(IN40k_45k, IN45k_50k, IN50k_60k, IN60k_70k, IN70k_80k, IN80k_90k,
+                            IN90k, INOver100k)/Households) %>% 
+  ungroup() %>% 
+  st_as_sf
+  
+  return(list(df2))
+  
+}
+
+CanALE_space_out <- hw(CanALE_space)
+
+```
+
+```{r}
+hw <- function(df){
+  
+  a <- value + value
+  b <- value * value
+  
+  return(list(a, b))
+  
+}
+
+hw()
+```
+

@@ -35,12 +35,13 @@ options(cancensus.cache_path = '/Users/Robin/Dropbox/SUS MSSI/Bivariate Analysis
 
 # Load 2 datasets Dataset 1 + calculate index
 
-## TEST
 
-regions <- list_census_regions(dataset = 'CA16')
-regions
+regions <- 
+  list_census_regions(dataset = 'CA16') %>% 
+  filter(name=="Montréal") %>%
+  as_census_region_list()
 
-regions <- list(CD="2466", CMA="24462", CSD="2466023")
+# regions <- list(CD="2466", CMA="24462", CSD="2466023")
 house_poor <- get_census(dataset = 'CA16',
                   level="DA",
                   vectors="v_CA16_4899",
@@ -50,40 +51,34 @@ house_poor <- get_census(dataset = 'CA16',
 names(house_poor)[14] <- "percent_house_poor"
 plot(house_poor[14], main="Percent of population that are 'house poor'")
 
-# Not working
-regions <- 
-  list_census_regions(dataset = 'CA16') %>% 
-  filter(name=="Montréal") %>%
-  as_census_region_list()
-regions
-## Querying CensusMapper API for regions data...
-unemployed <- get_census(dataset = 'CA16',
-                    level="DA",
-                    vectors="v_CA16_5606",
-                    regions=regions,
-                    geo_format = "sf",
-                    labels='long')
+no_eng_fr <- get_census(dataset = 'CA16',
+                  level="DA",
+                  vectors="v_CA16_524",
+                  regions=regions,
+                  geo_format = "sf",
+                  labels='long')
+names(no_eng_fr)[14] <- "no_eng_fr"
+no_eng_fr <- no_eng_fr %>% 
+  mutate(pct_no_eng_fr = (no_eng_fr/Population))
+plot(no_eng_fr[15], main="Percent of population speak neither French nor English")
+
+variables <- cbind(no_eng_fr, house_poor)
+variables <- variables[,c(13, 14, 27, 28)]
 
 print(regions)
 ```
 
 ```{r}
-library(sf)
-CanALE_space <- st_read(
-  "/Users/Robin/Dropbox/SUS MSSI/Bivariate Analysis/data/Mtl_DA_CANALE/Mtl_DA_CANALE.shp")
+# library(sf)
+# CanALE_space <- st_read(
+  # "/Users/Robin/Dropbox/SUS MSSI/Bivariate Analysis/data/Mtl_DA_CANALE/Mtl_DA_CANALE.shp")
 #plot(CanALE_space)
 
+# names(CanALE_space)
+# plot(CanALE_space[50])
+# plot(CanALE_space[33])
+
 ```
-
-
-
-
-```{r}
-names(CanALE_space)
-plot(CanALE_space[50])
-plot(CanALE_space[33])
-```
-
 
 
 #Compute crossover input
@@ -116,16 +111,16 @@ bivariate_color_scale <- tibble(
 no_classes <- 3 
 
 # extract quantiles
-quantiles_variable_1 <- CanALE_space %>% 
+quantiles_variable_1 <- variables %>% 
   drop_na() %>%
-  pull(MHI) %>% 
+  pull(pct_no_eng_fr) %>% 
   quantile(probs = seq(0, 1, length.out = no_classes + 1)) %>%
   as.vector() # to remove names of quantiles, so idx below is numeric
 
 # extract quantiles
-quantiles_variable_2 <- CanALE_space %>% 
+quantiles_variable_2 <- variables %>% 
   drop_na() %>%
-  pull(ale_tranis) %>% 
+  pull(percent_house_poor) %>% 
   quantile(probs = seq(0, 1, length.out = no_classes + 1)) %>%
   as.vector() # to remove names of quantiles, so idx below is numeric
 
@@ -150,12 +145,13 @@ labels <- labels[1:length(labels) - 1]
 
 # here we actually create a new 
 # variable on the dataset with the quantiles
-bivariate_quantiles <- CanALE_space %>%
-  mutate(mean_quantiles_variable_one = cut(MHI,
+bivariate_quantiles <- variables %>%
+  mutate(mean_quantiles_variable_one = cut(pct_no_eng_fr,
                                breaks = quantiles_variable_1,
                                labels = labels,
-                               include.lowest = T)) %>%
-  mutate(mean_quantiles_variable_two = cut(ale_tranis,
+                               include.lowest = T)) %>% 
+
+  mutate(mean_quantiles_variable_two = cut(percent_house_poor,
                                breaks = quantiles_variable_2,
                                labels = labels,
                                include.lowest = T)) %>% 
@@ -191,8 +187,8 @@ legend <- ggplot() +
       fill = fill)
   ) +
   scale_fill_identity() +
-  labs(x = "More transit users ->",
-       y = "Higher median income ->") +
+  labs(x = "More house poor ->",
+       y = "Less English and French->") +
   theme_map() +
   # make font small enough
   theme(
@@ -458,10 +454,10 @@ map_total <-   ggplot(
   # ) +
   # add titles
   labs(x = NULL,
-         y = NULL#,
-         #subtitle = "Montreal's active living",
-         #title = paste0("Percent of people spending more than 30% of income",
-         #                  " on housing vs. ratio of renting tenants, 2016"),
+         y = NULL,
+         subtitle = "Montreal's languages and housing poor",
+         title = paste0("Percent of people without English or French",
+                           " vs. ratio of house poor tenants, 2016"),
          #caption = "Fig. 1. Active living index vs. average property value"
        ) +
   # add the theme

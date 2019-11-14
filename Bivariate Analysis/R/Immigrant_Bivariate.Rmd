@@ -27,36 +27,6 @@ library(tidyverse)
 library(cancensus)
 ```
 
-```{r}
-#  You may add this option, together with your API key, to your .Rprofile.
-
-options(cancensus.api_key = "CensusMapper_7e3d330753f798981cde4ca09d63b540")
-options(cancensus.cache_path = '/Users/Robin/Dropbox/SUS MSSI/Bivariate Analysis/data/census_cache')
-
-# Load 2 datasets Dataset 1 + calculate index
-
-regions <- 
-  list_census_regions(dataset = 'CA16') %>% 
-  filter(name=="Montréal") %>%
-  as_census_region_list
-## Querying CensusMapper API for regions data...
-owner <- get_census(dataset = 'CA16',
-                    level="DA",
-                    vectors="v_CA16_4837",
-                    regions=regions,
-                    geo_format = "sf",
-                    labels='long')
-
-
-owner <- get_census(dataset = 'CA16',
-                  level="DA",
-                  vectors="v_CA16_4837",
-                  regions=regions,
-                  geo_format = "sf",
-                  labels='long')
-names(owner)[14] <- "owner"
-plot(owner[14], main="Number of owner tenants")
-```
 
 ```{r}
 library(sf)
@@ -70,22 +40,37 @@ CanALE_space <- st_read(
 
 
 ```{r}
+
+## Make variables
 names(CanALE_space)
-plot(CanALE_space[37])
-plot(CanALE_space[33])
+# plot(CanALE_space[37])
+# plot(CanALE_space[33])
 
 CanALE_space <- CanALE_space %>% 
-  mutate(Imm_pct = (Imm/Pop))
+  rowwise() %>% 
+  mutate(pct_Imm = Imm/Pop) %>% 
+  mutate(pct_active_trans = sum(Bicycle, Walked)/Mode) %>% 
+  mutate(pct_under40k = sum(Under_5k, IN5k_10k, IN10k_15k, IN15k, IN20k_25k, IN25k_30k, IN30k_35k, IN35k_40k)/Households) %>% 
+   mutate(pct_over40k = sum(IN40k_45k, IN45k_50k, IN50k_60k, IN60k_70k, IN70k_80k, IN80k_90k,
+                            IN90k, INOver100k)/Households) %>% 
+  ungroup() %>% 
+  st_as_sf
+  
 ```
 
-
+Variables:
+Variable_1 = ale_index
+Variable_2 = pct_active_transit (walk + bike to work)
+Variable_3 = pct_under40k
+Variable_4 = pct_over40k
+Variable_5 = pct_Imm (immigrant)
 
 #Compute crossover input
 ```{r}
 # create color scale that encodes two variables
 # red for gini and blue for mean income
 # the special notation with gather is due to readibility reasons
-bivariate_color_scale <- tibble(
+bivariate_color_scale_var1_var3 <- tibble(
   "3 - 3" = "#3F2949", # high inequality, high income
   "2 - 3" = "#435786",
   "1 - 3" = "#4885C1", # low inequality, high income
@@ -96,14 +81,25 @@ bivariate_color_scale <- tibble(
   "2 - 1" = "#BC7C8F",
   "1 - 1" = "#CABED0" # low inequality, low income
 ) %>%
-  gather("group", "fill")
+  gather("gr_var1_var3", "fill_var1_var3")
+
+bivariate_color_scale_var1_var4 <- tibble(
+  "3 - 3" = "#3F2949", # high inequality, high income
+  "2 - 3" = "#435786",
+  "1 - 3" = "#4885C1", # low inequality, high income
+  "3 - 2" = "#77324C",
+  "2 - 2" = "#806A8A", # medium inequality, medium income
+  "1 - 2" = "#89A1C8",
+  "3 - 1" = "#AE3A4E", # high inequality, low income
+  "2 - 1" = "#BC7C8F",
+  "1 - 1" = "#CABED0" # low inequality, low income
+) %>%
+  gather("gr_var1_var4", "fill_var1_var4")
 ```
 
-
-
-# Merge datasets, calculate quantiles, and add new field for match id for coloring
-
 ```{r}
+## variable quantiles
+
 #bivariate <- cbind(ro, house_poor$percent_house_poor)
 
 # define number of classes
@@ -111,19 +107,44 @@ no_classes <- 3
 
 # extract quantiles
 quantiles_variable_1 <- CanALE_space %>% drop_na() %>%
-  pull(Imm_pct) %>% 
+  pull(ale_index) %>% 
   quantile(probs = seq(0, 1, length.out = no_classes + 1)) %>%
   as.vector() # to remove names of quantiles, so idx below is numeric
 
-# extract quantiles
 quantiles_variable_2 <- CanALE_space %>% drop_na() %>%
-  pull(ale_index) %>% 
+  pull(pct_active_trans) %>% 
+  quantile(probs = seq(0, 1, length.out = no_classes + 1)) %>%
+  as.vector() # to remove names of quantiles, so idx below is numeric
+
+quantiles_variable_3 <- CanALE_space %>% drop_na() %>%
+  pull(pct_under40k) %>% 
+  quantile(probs = seq(0, 1, length.out = no_classes + 1)) %>%
+  as.vector() # to remove names of quantiles, so idx below is numeric
+
+quantiles_variable_4 <- CanALE_space %>% drop_na() %>%
+  pull(pct_over40k) %>% 
+  quantile(probs = seq(0, 1, length.out = no_classes + 1)) %>%
+  as.vector() # to remove names of quantiles, so idx below is numeric
+
+quantiles_variable_5 <- CanALE_space %>% drop_na() %>%
+  pull(pct_Imm) %>% 
   quantile(probs = seq(0, 1, length.out = no_classes + 1)) %>%
   as.vector() # to remove names of quantiles, so idx below is numeric
 
 #quantiles_variable_2[2] <- 0.001 #cheat
 
-cbind(quantiles_variable_1, quantiles_variable_2)
+
+```
+
+
+# Merge datasets, calculate quantiles, and add new field for match id for coloring
+
+```{r}
+## cbind variable quantile pairs
+
+# Variable: 1, 3
+
+cbind(quantiles_variable_1, quantiles_variable_3)
 
 # # here we create custom labels
 # labels <- imap_chr(quantiles, function(., idx){
@@ -142,12 +163,58 @@ labels <- labels[1:length(labels) - 1]
 
 # here we actually create a new 
 # variable on the dataset with the quantiles
-bivariate_quantiles <- CanALE_space %>%
-  mutate(mean_quantiles_variable_one = cut(Imm_pct,
+bivariate_quantiles_var1_var3 <- CanALE_space %>%
+  mutate(mean_quantiles_variable_one = cut(ale_index,
                                breaks = quantiles_variable_1,
                                labels = labels,
                                include.lowest = T)) %>%
-  mutate(mean_quantiles_variable_two = cut(ale_index,
+  mutate(mean_quantiles_variable_three = cut(pct_under40k,
+                               breaks = quantiles_variable_3,
+                               labels = labels,
+                               include.lowest = T)) %>% 
+  mutate(
+    
+    # by pasting the factors together as numbers we match the groups defined
+    # in the tibble bivariate_color_scale
+    gr_var1_var3 = paste(
+      as.numeric(mean_quantiles_variable_one), "-",
+      as.numeric(mean_quantiles_variable_three)
+    )
+  ) %>%
+  # we now join the actual hex values per "group"
+  # so each municipality knows its hex value based on the his gini and avg
+  # income value
+  left_join(bivariate_color_scale_var1_var3, by = "gr_var1_var3")
+#bivariate_quantiles$fill
+```
+
+
+```{r}
+## cbind variable quantile pairs
+
+# Variables: 1, 4
+
+cbind(quantiles_variable_1, quantiles_variable_4)
+
+# # here we create custom labels
+# labels <- imap_chr(quantiles, function(., idx){
+#   return(paste0(round(quantiles[idx] , 2),
+#                              "",
+#                              " – ",
+#                              round(quantiles[idx + 1] , 2),
+#                              ""))
+# })
+
+labels <- c("1", "2", "3", "4")
+
+labels <- labels[1:length(labels) - 1]
+
+bivariate_quantiles_var1_var4 <- CanALE_space %>%
+  mutate(mean_quantiles_variable_one = cut(ale_index,
+                               breaks = quantiles_variable_1,
+                               labels = labels,
+                               include.lowest = T)) %>%
+  mutate(mean_quantiles_variable_four = cut(pct_over40k,
                                breaks = quantiles_variable_2,
                                labels = labels,
                                include.lowest = T)) %>% 
@@ -155,36 +222,70 @@ bivariate_quantiles <- CanALE_space %>%
     
     # by pasting the factors together as numbers we match the groups defined
     # in the tibble bivariate_color_scale
-    group = paste(
+    gr_var1_var4 = paste(
       as.numeric(mean_quantiles_variable_one), "-",
-      as.numeric(mean_quantiles_variable_two)
+      as.numeric(mean_quantiles_variable_four)
     )
   ) %>%
   # we now join the actual hex values per "group"
   # so each municipality knows its hex value based on the his gini and avg
   # income value
-  left_join(bivariate_color_scale, by = "group")
+  left_join(bivariate_color_scale_var1_var4, by = "gr_var1_var4")
 #bivariate_quantiles$fill
 ```
 
 
+
 ```{r}
-bivariate_color_scale %<>%
-  separate(group, into = c("mean_quantiles_variable_one", "mean_quantiles_variable_two"), sep = " - ") %>%
+## assign bivariate color scale fills to quantile variable pairs
+
+## Variables: 1, 3
+bivariate_color_scale_var1_var3 %<>%
+  separate(gr_var1_var3, into = c("mean_quantiles_variable_one", "mean_quantiles_variable_three"), sep = " - ") %>%
   mutate(mean_quantiles_variable_one = as.integer(mean_quantiles_variable_one),
-         mean_quantiles_variable_two = as.integer(mean_quantiles_variable_two))
+         mean_quantiles_variable_three = as.integer(mean_quantiles_variable_three)
+         )
 
 legend <- ggplot() +
   geom_tile(
-    data = bivariate_color_scale,
+    data = bivariate_color_scale_var1_var3,
     mapping = aes(
-      x = mean_quantiles_variable_two,
+      x = mean_quantiles_variable_three,
       y = mean_quantiles_variable_one,
-      fill = fill)
+      fill = fill_var1_var3)
   ) +
   scale_fill_identity() +
-  labs(x = "More active living environment ->",
-       y = "Higher immigrant population ->") +
+  labs(x = "Higher income (up to 40k) ->",
+       y = "More active living environment ->") +
+  theme_map() +
+  # make font small enough
+  theme(
+    axis.title = element_text(size = 6)
+  ) +
+  # quadratic tiles
+  coord_fixed()
+
+legend
+
+## Variables: 1, 4
+
+bivariate_color_scale_var1_var4 %<>%
+  separate(gr_var1_var4, into = c("mean_quantiles_variable_one", "mean_quantiles_variable_four"), sep = " - ") %>%
+  mutate(mean_quantiles_variable_one = as.integer(mean_quantiles_variable_one),
+         mean_quantiles_variable_four = as.integer(mean_quantiles_variable_four)
+         )
+
+legend <- ggplot() +
+  geom_tile(
+    data = bivariate_color_scale_var1_var4,
+    mapping = aes(
+      x = mean_quantiles_variable_four,
+      y = mean_quantiles_variable_one,
+      fill = fill_var1_var4)
+  ) +
+  scale_fill_identity() +
+  labs(x = "Higher income (above 40k) ->",
+       y = "More active living environment ->") +
   theme_map() +
   # make font small enough
   theme(
@@ -260,13 +361,18 @@ theme_map <- function(...) {
 
 ```{r}
 #names(bivariate_quantiles)
-cropped_roads <- st_intersection(bivariate_quantiles, st_buffer(st_centroid(st_union(bivariate_quantiles)), 26000))
+
+## Variables: 1, 3
+
+cropped_roads_var1_var3 <- st_intersection(bivariate_quantiles_var1_var3, st_buffer(st_centroid(st_union(bivariate_quantiles_var1_var3)), 26000))
+
+cropped_roads_var1_var4 <- st_intersection(bivariate_quantiles_var1_var4, st_buffer(st_centroid(st_union(bivariate_quantiles_var1_var3)), 26000))
 #bivariate_quantiles[which(is.na(bivariate_quantiles$fill.x)), 100] <- adjustcolor("white")
 #bivariate_quantiles[which(is.na(bivariate_quantiles$fill.y)), 103] <- adjustcolor("white")
 
 map_var_1 <-   ggplot(
   # use the same dataset as before
-  data = cropped_roads
+  data = cropped_roads_var1_var3
   ) +
   # first: draw the relief
   # geom_raster(
@@ -335,9 +441,9 @@ map_var_1 <-   ggplot(
   # add the theme
   theme_map() 
 
-map_var_2 <-   ggplot(
+map_var_3 <-   ggplot(
   # use the same dataset as before
-  data = cropped_roads
+  data = cropped_roads_var1_var3
   ) +
   # first: draw the relief
   # geom_raster(
@@ -355,7 +461,7 @@ map_var_2 <-   ggplot(
   # color municipalities according to their gini / income combination
   geom_sf(
     aes(
-      fill = mean_quantiles_variable_two
+      fill = mean_quantiles_variable_three
     ),
     # use thin white stroke for municipalities
     color = "white",
@@ -371,9 +477,6 @@ map_var_2 <-   ggplot(
     name = "Average dwelling value",
     alpha = 0.8, # make fill a bit brighter
     begin = 0.1, # this option seems to be new (compared to 2016):
-    # with this we can truncate the
-    # color scale, so that extreme colors (very dark and very bright) are not
-    # used, which makes the map a bit more aesthetic
     end = 0.9,
     discrete = T, # discrete classes, thus guide_legend instead of _colorbar
     direction = 1, # dark is lowest, yellow is highest
@@ -406,9 +509,9 @@ map_var_2 <-   ggplot(
   # add the theme
   theme_map()  
 
-map_total <-   ggplot(
+map_var_4 <-   ggplot(
   # use the same dataset as before
-  data = cropped_roads
+  data = cropped_roads_var1_var4
   ) +
   # first: draw the relief
   # geom_raster(
@@ -426,7 +529,75 @@ map_total <-   ggplot(
   # color municipalities according to their gini / income combination
   geom_sf(
     aes(
-      fill = fill
+      fill = mean_quantiles_variable_four
+    ),
+    # use thin white stroke for municipalities
+    color = "white",
+    size = 0.1
+  ) +
+  # as the sf object municipality_prod_geo has a column with name "fill" that
+  # contains the literal color as hex code for each municipality, we can use
+  # scale_fill_identity here
+  scale_fill_identity() +
+  # use the Viridis color scale
+  scale_fill_viridis(
+    option = "magma",
+    name = "Average dwelling value",
+    alpha = 0.8, # make fill a bit brighter
+    begin = 0.1, # this option seems to be new (compared to 2016):
+    end = 0.9,
+    discrete = T, # discrete classes, thus guide_legend instead of _colorbar
+    direction = 1, # dark is lowest, yellow is highest
+    guide = guide_legend(
+     keyheight = unit(5, units = "mm"),
+     title.position = "top",
+     reverse = T # display highest income on top
+  )) +
+  # use thicker white stroke for cantons
+  # geom_sf(
+  #   data = canton_geo,
+  #   fill = "transparent",
+  #   color = "white",
+  #   size = 0.5
+  # ) +
+  # # draw lakes in light blue
+  # geom_sf(
+  #   data = lake_geo,
+  #   fill = "#D6F1FF",
+  #   color = "transparent"
+  # ) +
+  # add titles
+  labs(x = NULL,
+         y = NULL#,
+         #subtitle = "Montreal's active living",
+         #title = paste0("Percent of people spending more than 30% of income",
+         #                  " on housing vs. ratio of renting tenants, 2016"),
+         #caption = "Fig. 1. Active living index vs. average property value"
+       ) +
+  # add the theme
+  theme_map()  
+
+map_total_var1_var3 <-   ggplot(
+  # use the same dataset as before
+  data = cropped_roads_var1_var3
+  ) +
+  # first: draw the relief
+  # geom_raster(
+  #   data = relief,
+  #   aes(
+  #     x = x,
+  #     y = y,
+  #     alpha = value
+  #   )
+  # ) +
+  # use the "alpha hack" (as the "fill" aesthetic is already taken)
+  scale_alpha(name = "",
+              range = c(0.6, 0),
+              guide = F) + # suppress legend
+  # color municipalities according to their gini / income combination
+  geom_sf(
+    aes(
+      fill = fill_var1_var3
     ),
     # use thin white stroke for municipalities
     color = "white",
@@ -453,16 +624,72 @@ map_total <-   ggplot(
   labs(x = NULL,
          y = NULL,
          subtitle = "Montreal's immigration and active living index",
-         title = paste0("Percent of Immigrants",
-                           " vs. Active Living Environments, 2016"),
+         title = paste0("Active Living Environments vs.",
+                           "Median Household Income (< $40,000), 2016"),
+         caption = "Fig. 1. Percentage of immigrants vs. active living index"
+       ) +
+  # add the theme
+  theme_map() 
+
+map_total_var1_var4 <-   ggplot(
+  # use the same dataset as before
+  data = cropped_roads_var1_var4
+  ) +
+  # first: draw the relief
+  # geom_raster(
+  #   data = relief,
+  #   aes(
+  #     x = x,
+  #     y = y,
+  #     alpha = value
+  #   )
+  # ) +
+  # use the "alpha hack" (as the "fill" aesthetic is already taken)
+  scale_alpha(name = "",
+              range = c(0.6, 0),
+              guide = F) + # suppress legend
+  # color municipalities according to their gini / income combination
+  geom_sf(
+    aes(
+      fill = fill_var1_var4
+    ),
+    # use thin white stroke for municipalities
+    color = "white",
+    size = 0
+  ) +
+  # as the sf object municipality_prod_geo has a column with name "fill" that
+  # contains the literal color as hex code for each municipality, we can use
+  # scale_fill_identity here
+  scale_fill_identity() +
+  # use thicker white stroke for cantons
+  # geom_sf(
+  #   data = canton_geo,
+  #   fill = "transparent",
+  #   color = "white",
+  #   size = 0.5
+  # ) +
+  # # draw lakes in light blue
+  # geom_sf(
+  #   data = lake_geo,
+  #   fill = "#D6F1FF",
+  #   color = "transparent"
+  # ) +
+  # add titles
+  labs(x = NULL,
+         y = NULL,
+         subtitle = "Montreal's immigration and active living index",
+         title = paste0("Active Living Environments vs.",
+                           "Median Household Income (> $40,000), 2016"),
          caption = "Fig. 1. Percentage of immigrants vs. active living index"
        ) +
   # add the theme
   theme_map() 
 
 map_var_1
-map_var_2
-map_total
+map_var_3
+map_var_4
+map_total_var1_var3
+map_total_var1_var4
 
 
 ```
@@ -470,6 +697,6 @@ map_total
 
 ```{r}
 ggdraw() +
-  draw_plot(map_total, 0, 0, 1.05, 1.05) +
+  draw_plot(map_total_var1_var4, 0, 0, 1.05, 1.05) +
   draw_plot(legend, 0.015, 0.0, 0.35, 0.35) 
 ```

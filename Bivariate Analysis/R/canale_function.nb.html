@@ -1751,60 +1751,68 @@ summary {
 <!-- rnb-text-begin -->
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuaW5zdGFsbC5wYWNrYWdlcyhcImNhbnNpbVwiKVxuaW5zdGFsbC5wYWNrYWdlcyhcImNhbmNlbnN1c1wiKVxuYGBgIn0= -->
-<pre class="r"><code>install.packages(&quot;cansim&quot;)
-install.packages(&quot;cancensus&quot;)</code></pre>
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxucHJpbnQoXCJoZWxsbyB3b3JsZFwiKVxuXG5gYGAifQ== -->
+<pre class="r"><code>print(&quot;hello world&quot;)
+</code></pre>
 <!-- rnb-source-end -->
+<!-- rnb-output-begin eyJkYXRhIjoiWzFdIFwiaGVsbG8gd29ybGRcIlxuIn0= -->
+<pre><code>[1] &quot;hello world&quot;</code></pre>
+<!-- rnb-output-end -->
 <!-- rnb-chunk-end -->
 <!-- rnb-text-begin -->
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxubGlicmFyeShuZXR3b3JrRDMpXG5nZXR3ZCgpXG5saWJyYXJ5KGNhbnNpbSlcbmxpYnJhcnkoY2FuY2Vuc3VzKVxuYGBgIn0= -->
-<pre class="r"><code>library(networkD3)
-getwd()
-library(cansim)
-library(cancensus)</code></pre>
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuaHcoKVxuXG5gYGAifQ== -->
+<pre class="r"><code>hw()
+</code></pre>
 <!-- rnb-source-end -->
+<!-- rnb-output-begin eyJkYXRhIjoiWzFdIFwiaGVsbG8gd29ybGRcIlxuIn0= -->
+<pre><code>[1] &quot;hello world&quot;</code></pre>
+<!-- rnb-output-end -->
 <!-- rnb-chunk-end -->
-<!-- rnb-text-begin -->
-<!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxubm9kZXMgPC0gcmVhZC5jc3YoZmlsZT1cIm5vZGVzLmNzdlwiLCBhcy5pcz1UUlVFKVxubm9kZXMgPC0gZGF0YS5mcmFtZShub2RlcylcbmNvbG5hbWVzKG5vZGVzKTwtIGMoXCJuYW1lXCIsICAgIFwiSURcIiwgICAgXCJub2RlX2dyb3VwXCIpXG5yb3duYW1lcyhub2RlcykgPC0gc2VxKDEsbGVuZ3RoKG5vZGVzWywxXSkpXG5saW5rcyA8LSByZWFkLmNzdihmaWxlPVwibGlua3MuY3N2XCIpXG5saW5rcyA8LSBkYXRhLmZyYW1lKGxpbmtzKVxuY29sbmFtZXMobGlua3MpPC0gYyhcInNvdXJjZVwiLCBcInRhcmdldFwiLCBcInZhbHVlXCIsIFwiZ3JvdXBfdHlwZVwiKVxucm93bmFtZXMobGlua3MpIDwtIHNlcSgxLGxlbmd0aChsaW5rc1ssMV0pKVxuI21hc3Rlcl9wbGFuIDwtXG4gc2Fua2V5TmV0d29yayhMaW5rcyA9IGxpbmtzLCBOb2RlcyA9IG5vZGVzLCBTb3VyY2UgPSBcInNvdXJjZVwiLFxuICAgICAgICAgICAgVGFyZ2V0ID0gXCJ0YXJnZXRcIiwgVmFsdWUgPSBcInZhbHVlXCIsIE5vZGVJRCA9IFwibmFtZVwiLFxuICAgICAgICAgICAgIGZvbnRTaXplID0gMTQsIG5vZGVXaWR0aCA9IDEwLCBMaW5rR3JvdXAgPSBcImdyb3VwX3R5cGVcIiwgIE5vZGVHcm91cCA9IE5VTEwsXG4gICAgICAgICAgIGNvbG91clNjYWxlID0gSlMoXCJkMy5zY2FsZU9yZGluYWwoZDMuc2NoZW1lQ2F0ZWdvcnkyMCk7XCIpLCBzaW5rc1JpZ2h0ID0gRkFMU0UsIGl0ZXJhdGlvbnMgPTE4LCBoZWlnaHQgPSA4MDAsIHdpZHRoPTEyMDAsIG5vZGVQYWRkaW5nID0gMTApXG5gYGAifQ== -->
-<pre class="r"><code>nodes &lt;- read.csv(file=&quot;nodes.csv&quot;, as.is=TRUE)
-nodes &lt;- data.frame(nodes)
-colnames(nodes)&lt;- c(&quot;name&quot;,    &quot;ID&quot;,    &quot;node_group&quot;)
-rownames(nodes) &lt;- seq(1,length(nodes[,1]))
-links &lt;- read.csv(file=&quot;links.csv&quot;)
-links &lt;- data.frame(links)
-colnames(links)&lt;- c(&quot;source&quot;, &quot;target&quot;, &quot;value&quot;, &quot;group_type&quot;)
-rownames(links) &lt;- seq(1,length(links[,1]))
-#master_plan &lt;-
- sankeyNetwork(Links = links, Nodes = nodes, Source = &quot;source&quot;,
-            Target = &quot;target&quot;, Value = &quot;value&quot;, NodeID = &quot;name&quot;,
-             fontSize = 14, nodeWidth = 10, LinkGroup = &quot;group_type&quot;,  NodeGroup = NULL,
-           colourScale = JS(&quot;d3.scaleOrdinal(d3.schemeCategory20);&quot;), sinksRight = FALSE, iterations =18, height = 800, width=1200, nodePadding = 10)</code></pre>
-<!-- rnb-source-end -->
-<!-- rnb-chunk-end -->
-<!-- rnb-text-begin -->
-<p>Get data</p>
-<p>For CANSIM tables: looking for ones with GEOUID</p>
-<!-- rnb-text-end -->
-<!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxub3B0aW9ucyhjYW5zaW0uY2FjaGVfcGF0aD1cImRhdGEvY2Vuc3VzX2NhY2hlXCIpXG5saXN0X2NhbnNpbV90YWJsZXMoKVxuXG5saXN0X2NlbnN1c19kYXRhc2V0cyh1c2VfY2FjaGUgPSBGQUxTRSwgcXVpZXQgPSBGQUxTRSlcbmxpc3RfY2Vuc3VzX3JlZ2lvbnMoXCJDQTE2XCIsIHVzZV9jYWNoZSA9IEZBTFNFLCBxdWlldCA9IFRSVUUpXG5saXN0X2NlbnN1c192ZWN0b3JzKFwiQ0ExNlwiLCB1c2VfY2FjaGUgPSBUUlVFLCBxdWlldCA9IFRSVUUpXG5saXN0ZXIgPC0gbGlzdF9jZW5zdXNfdmVjdG9ycyhcIkNBMTZcIiwgdXNlX2NhY2hlID0gVFJVRSwgcXVpZXQgPSBUUlVFKVxubGlzdGVyWzQwMDE6NjYyMyxdXG5gYGAifQ== -->
-<pre class="r"><code>options(cansim.cache_path=&quot;data/census_cache&quot;)
-list_cansim_tables()
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuaHcgPC0gZnVuY3Rpb24oQ2FuQUxFX3NwYWNlKXtcbiAgXG4gXG4gIENhbkFMRV9zcGFjZTIgPC0gQ2FuQUxFX3NwYWNlICU+JSBcbiAgcm93d2lzZSgpICU+JSBcbiAgbXV0YXRlKHBjdF9JbW0gPSBJbW0vUG9wKSAlPiUgXG4gIG11dGF0ZShwY3RfYWN0aXZlX3RyYW5zID0gc3VtKEJpY3ljbGUsIFdhbGtlZCkvTW9kZSkgJT4lIFxuICBtdXRhdGUocGN0X3VuZGVyNDBrID0gc3VtKFVuZGVyXzVrLCBJTjVrXzEwaywgSU4xMGtfMTVrLCBJTjE1aywgSU4yMGtfMjVrLCBJTjI1a18zMGssIElOMzBrXzM1aywgSU4zNWtfNDBrKS9Ib3VzZWhvbGRzKSAlPiUgXG4gICBtdXRhdGUocGN0X292ZXI0MGsgPSBzdW0oSU40MGtfNDVrLCBJTjQ1a181MGssIElONTBrXzYwaywgSU42MGtfNzBrLCBJTjcwa184MGssIElOODBrXzkwayxcbiAgICAgICAgICAgICAgICAgICAgICAgICAgICBJTjkwaywgSU5PdmVyMTAwaykvSG91c2Vob2xkcykgJT4lIFxuICB1bmdyb3VwKCkgJT4lIFxuICBzdF9hc19zZlxuICBcbiAgcmV0dXJuKGxpc3QoQ2FuQUxFX3NwYWNlMikpXG4gIFxufVxuXG5DYW5BTEVfc3BhY2Vfb3V0IDwtIGh3KENhbkFMRV9zcGFjZSlcblxuYGBgIn0= -->
+<pre class="r"><code>hw &lt;- function(CanALE_space){
+  
+ 
+  CanALE_space2 &lt;- CanALE_space %&gt;% 
+  rowwise() %&gt;% 
+  mutate(pct_Imm = Imm/Pop) %&gt;% 
+  mutate(pct_active_trans = sum(Bicycle, Walked)/Mode) %&gt;% 
+  mutate(pct_under40k = sum(Under_5k, IN5k_10k, IN10k_15k, IN15k, IN20k_25k, IN25k_30k, IN30k_35k, IN35k_40k)/Households) %&gt;% 
+   mutate(pct_over40k = sum(IN40k_45k, IN45k_50k, IN50k_60k, IN60k_70k, IN70k_80k, IN80k_90k,
+                            IN90k, INOver100k)/Households) %&gt;% 
+  ungroup() %&gt;% 
+  st_as_sf
+  
+  return(list(CanALE_space2))
+  
+}
 
-list_census_datasets(use_cache = FALSE, quiet = FALSE)
-list_census_regions(&quot;CA16&quot;, use_cache = FALSE, quiet = TRUE)
-list_census_vectors(&quot;CA16&quot;, use_cache = TRUE, quiet = TRUE)
-lister &lt;- list_census_vectors(&quot;CA16&quot;, use_cache = TRUE, quiet = TRUE)
-lister[4001:6623,]</code></pre>
+CanALE_space_out &lt;- hw(CanALE_space)
+</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
+<!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuaHcgPC0gZnVuY3Rpb24oZGYpe1xuICBcbiAgYSA8LSB2YWx1ZSArIHZhbHVlXG4gIGIgPC0gdmFsdWUgKiB2YWx1ZVxuICBcbiAgcmV0dXJuKGxpc3QoYSwgYikpXG4gIFxufVxuXG5odygpXG5gYGAifQ== -->
+<pre class="r"><code>hw &lt;- function(df){
+  
+  a &lt;- value + value
+  b &lt;- value * value
+  
+  return(list(a, b))
+  
+}
+
+hw()</code></pre>
 <!-- rnb-source-end -->
 <!-- rnb-chunk-end -->
 <!-- rnb-text-begin -->
 <!-- rnb-text-end -->
 
-<div id="rmd-source-code">LS0tCnRpdGxlOiAiUiBOb3RlYm9vayIKb3V0cHV0OiBodG1sX25vdGVib29rCi0tLQoKYGBge3J9Cmluc3RhbGwucGFja2FnZXMoImNhbnNpbSIpCmluc3RhbGwucGFja2FnZXMoImNhbmNlbnN1cyIpCmBgYAoKCmBgYHtyfQpsaWJyYXJ5KG5ldHdvcmtEMykKZ2V0d2QoKQpsaWJyYXJ5KGNhbnNpbSkKbGlicmFyeShjYW5jZW5zdXMpCmBgYAoKCmBgYHtyfQpub2RlcyA8LSByZWFkLmNzdihmaWxlPSJub2Rlcy5jc3YiLCBhcy5pcz1UUlVFKQpub2RlcyA8LSBkYXRhLmZyYW1lKG5vZGVzKQpjb2xuYW1lcyhub2Rlcyk8LSBjKCJuYW1lIiwgICAgIklEIiwgICAgIm5vZGVfZ3JvdXAiKQpyb3duYW1lcyhub2RlcykgPC0gc2VxKDEsbGVuZ3RoKG5vZGVzWywxXSkpCmxpbmtzIDwtIHJlYWQuY3N2KGZpbGU9ImxpbmtzLmNzdiIpCmxpbmtzIDwtIGRhdGEuZnJhbWUobGlua3MpCmNvbG5hbWVzKGxpbmtzKTwtIGMoInNvdXJjZSIsICJ0YXJnZXQiLCAidmFsdWUiLCAiZ3JvdXBfdHlwZSIpCnJvd25hbWVzKGxpbmtzKSA8LSBzZXEoMSxsZW5ndGgobGlua3NbLDFdKSkKI21hc3Rlcl9wbGFuIDwtCiBzYW5rZXlOZXR3b3JrKExpbmtzID0gbGlua3MsIE5vZGVzID0gbm9kZXMsIFNvdXJjZSA9ICJzb3VyY2UiLAogICAgICAgICAgICBUYXJnZXQgPSAidGFyZ2V0IiwgVmFsdWUgPSAidmFsdWUiLCBOb2RlSUQgPSAibmFtZSIsCiAgICAgICAgICAgICBmb250U2l6ZSA9IDE0LCBub2RlV2lkdGggPSAxMCwgTGlua0dyb3VwID0gImdyb3VwX3R5cGUiLCAgTm9kZUdyb3VwID0gTlVMTCwKICAgICAgICAgICBjb2xvdXJTY2FsZSA9IEpTKCJkMy5zY2FsZU9yZGluYWwoZDMuc2NoZW1lQ2F0ZWdvcnkyMCk7IiksIHNpbmtzUmlnaHQgPSBGQUxTRSwgaXRlcmF0aW9ucyA9MTgsIGhlaWdodCA9IDgwMCwgd2lkdGg9MTIwMCwgbm9kZVBhZGRpbmcgPSAxMCkKYGBgCgpHZXQgZGF0YQoKRm9yIENBTlNJTSB0YWJsZXM6IGxvb2tpbmcgZm9yIG9uZXMgd2l0aCBHRU9VSUQKCmBgYHtyfQpvcHRpb25zKGNhbnNpbS5jYWNoZV9wYXRoPSJkYXRhL2NlbnN1c19jYWNoZSIpCmxpc3RfY2Fuc2ltX3RhYmxlcygpCgpsaXN0X2NlbnN1c19kYXRhc2V0cyh1c2VfY2FjaGUgPSBGQUxTRSwgcXVpZXQgPSBGQUxTRSkKbGlzdF9jZW5zdXNfcmVnaW9ucygiQ0ExNiIsIHVzZV9jYWNoZSA9IEZBTFNFLCBxdWlldCA9IFRSVUUpCmxpc3RfY2Vuc3VzX3ZlY3RvcnMoIkNBMTYiLCB1c2VfY2FjaGUgPSBUUlVFLCBxdWlldCA9IFRSVUUpCmxpc3RlciA8LSBsaXN0X2NlbnN1c192ZWN0b3JzKCJDQTE2IiwgdXNlX2NhY2hlID0gVFJVRSwgcXVpZXQgPSBUUlVFKQpsaXN0ZXJbNDAwMTo2NjIzLF0KYGBgCgo=</div>
+<div id="rmd-source-code">LS0tCnRpdGxlOiAiUiBOb3RlYm9vayIKb3V0cHV0OiBodG1sX25vdGVib29rCi0tLQoKCmBgYHtyfQpwcmludCgiaGVsbG8gd29ybGQiKQpgYGAKCmBgYHtyfQpodyA8LSBmdW5jdGlvbigpe3ByaW50KCJoZWxsbyB3b3JsZCIpfQpodygpCmBgYApgYGB7cn0KaHcgPC0gZnVuY3Rpb24oZGYsIFYxID0gSW1tLCBWMiA9IFBvcCwgVjM9IEJpY3ljbGUpewogIAogCiAgZGYyIDwtIGRmICU+JSAKICByb3d3aXNlKCkgJT4lIAogIG11dGF0ZShwY3RfSW1tID0gVjEvVjIpICU+JSAKICBtdXRhdGUocGN0X2FjdGl2ZV90cmFucyA9IHN1bShCaWN5Y2xlLCBXYWxrZWQpL01vZGUpICU+JSAKICBtdXRhdGUocGN0X3VuZGVyNDBrID0gc3VtKFVuZGVyXzVrLCBJTjVrXzEwaywgSU4xMGtfMTVrLCBJTjE1aywgSU4yMGtfMjVrLCBJTjI1a18zMGssIElOMzBrXzM1aywgSU4zNWtfNDBrKS9Ib3VzZWhvbGRzKSAlPiUgCiAgIG11dGF0ZShwY3Rfb3ZlcjQwayA9IHN1bShJTjQwa180NWssIElONDVrXzUwaywgSU41MGtfNjBrLCBJTjYwa183MGssIElONzBrXzgwaywgSU44MGtfOTBrLAogICAgICAgICAgICAgICAgICAgICAgICAgICAgSU45MGssIElOT3ZlcjEwMGspL0hvdXNlaG9sZHMpICU+JSAKICB1bmdyb3VwKCkgJT4lIAogIHN0X2FzX3NmCiAgCiAgcmV0dXJuKGxpc3QoZGYyKSkKICAKfQoKQ2FuQUxFX3NwYWNlX291dCA8LSBodyhDYW5BTEVfc3BhY2UpCgpgYGAKCmBgYHtyfQpodyA8LSBmdW5jdGlvbihkZil7CiAgCiAgYSA8LSB2YWx1ZSArIHZhbHVlCiAgYiA8LSB2YWx1ZSAqIHZhbHVlCiAgCiAgcmV0dXJuKGxpc3QoYSwgYikpCiAgCn0KCmh3KCkKYGBgCgo=</div>
 
 
 
@@ -1851,7 +1859,7 @@ $(document).ready(function () {
 <!-- code folding -->
 <script>
 $(document).ready(function () {
-  window.initializeSourceEmbed("masterplan flowchart.Rmd");
+  window.initializeSourceEmbed("canale_function.Rmd");
   window.initializeCodeFolding("show" === "show");
 });
 </script>
