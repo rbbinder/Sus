@@ -400,7 +400,7 @@ quantiles_pct_pubwalkbike <- CanALE_space %>% drop_na() %>%
 
 ```
 
-In order to use the quantiles for the analysis, we must 
+In order to use the quantiles for the analysis, we must combine the pairs of variable quantiles previously generated. We use cbind() to do this for two variables at a time. We then join by the color scale previously assigned to that variable pairing and pair by the group assigned in order to be able to map the variables according to their quantile color schemes in the next section.
 
 # Merge datasets, calculate quantiles, and add new field for match id for coloring
 
@@ -522,20 +522,202 @@ bivariate_quantiles_ale_tranis_AvVal <- CanALE_space %>%
     )
   ) %>%
 
-  left_join(biv_color_ale_tr, by = "gr_ale_index_pct_over40k")
+  left_join(biv_color_ale_tranis_AvVal, by = "gr_ale_tranis_AvVal")
 
+# Variables: ale_tranis , pct_under40k
 
+cbind(quantiles_ale_tranis, quantiles_pct_under40k)
+labels <- c("1", "2", "3", "4")
+labels <- labels[1:length(labels) - 1]
+
+bivariate_quantiles_ale_tranis_pct_under40k <- CanALE_space %>%
+  mutate(mean_quantiles_ale_tranis = cut(ale_tranis,
+                               breaks = quantiles_ale_tranis,
+                               labels = labels,
+                               include.lowest = T)) %>%
+  mutate(mean_quantiles_pct_under40k = cut(pct_under40k,
+                               breaks = quantiles_pct_under40k,
+                               labels = labels,
+                               include.lowest = T)) %>% 
+  mutate(
+   gr_ale_tranis_pct_under40k = paste(
+      as.numeric(mean_quantiles_ale_tranis), "-",
+      as.numeric(mean_quantiles_pct_under40k)
+    )
+  ) %>%
+
+  left_join(biv_color_ale_tranis_pct_under40k, by = "gr_ale_tranis_pct_under40k")
+
+# Variables: ale_tranis , pct_over40k
+
+cbind(quantiles_ale_tranis, quantiles_pct_over40k)
+labels <- c("1", "2", "3", "4")
+labels <- labels[1:length(labels) - 1]
+
+bivariate_quantiles_ale_tranis_pct_over40k <- CanALE_space %>%
+  mutate(mean_quantiles_ale_tranis = cut(ale_tranis,
+                               breaks = quantiles_ale_tranis,
+                               labels = labels,
+                               include.lowest = T)) %>%
+  mutate(mean_quantiles_pct_over40k = cut(pct_over40k,
+                               breaks = quantiles_pct_over40k,
+                               labels = labels,
+                               include.lowest = T)) %>% 
+  mutate(
+   gr_ale_tranis_pct_over40k = paste(
+      as.numeric(mean_quantiles_ale_tranis), "-",
+      as.numeric(mean_quantiles_pct_over40k)
+    )
+  ) %>%
+
+  left_join(biv_color_ale_tranis_pct_over40k, by = "gr_ale_tranis_pct_over40k")
+
+# Variables: ale_tranis , pct_Imm
+
+cbind(quantiles_ale_tranis, quantiles_pct_Imm)
+labels <- c("1", "2", "3", "4")
+labels <- labels[1:length(labels) - 1]
+
+bivariate_quantiles_ale_tranis_pct_Imm <- CanALE_space %>%
+  mutate(mean_quantiles_ale_tranis = cut(ale_tranis,
+                               breaks = quantiles_ale_tranis,
+                               labels = labels,
+                               include.lowest = T)) %>%
+  mutate(mean_quantiles_pct_Imm = cut(pct_Imm,
+                               breaks = quantiles_pct_Imm,
+                               labels = labels,
+                               include.lowest = T)) %>% 
+  mutate(
+   gr_ale_tranis_pct_Imm = paste(
+      as.numeric(mean_quantiles_ale_tranis), "-",
+      as.numeric(mean_quantiles_pct_Imm)
+    )
+  ) %>%
+
+  left_join(biv_color_ale_tranis_pct_Imm, by = "gr_ale_tranis_pct_Imm")
+
+# Variables: pct_Imm, pct_active_trans
+
+cbind(quantiles_pct_Imm, quantiles_pct_active_trans)
+labels <- c("1", "2", "3", "4")
+labels <- labels[1:length(labels) - 1]
+
+bivariate_quantiles_pct_Imm_pct_active_trans <- CanALE_space %>%
+  mutate(mean_quantiles_pct_Imm = cut(pct_Imm,
+                               breaks = quantiles_pct_Imm,
+                               labels = labels,
+                               include.lowest = T)) %>%
+  mutate(mean_quantiles_pct_active_trans = cut(pct_active_trans,
+                               breaks = quantiles_pct_active_trans,
+                               labels = labels,
+                               include.lowest = T)) %>% 
+  mutate(
+   gr_pct_Imm_pct_active_trans = paste(
+      as.numeric(mean_quantiles_pct_Imm), "-",
+      as.numeric(mean_quantiles_pct_active_trans)
+    )
+  ) %>%
+
+  left_join(biv_color_pct_Imm_pct_active_trans, by = "gr_pct_Imm_pct_active_trans")
+
+# Variables: pct_Imm, pct_walked
+
+cbind(quantiles_pct_Imm, quantiles_pct_walked)
+labels <- c("1", "2", "3", "4")
+labels <- labels[1:length(labels) - 1]
+
+bivariate_quantiles_pct_Imm_pct_walked <- CanALE_space %>%
+  mutate(mean_quantiles_pct_Imm = cut(pct_Imm,
+                               breaks = quantiles_pct_Imm,
+                               labels = labels,
+                               include.lowest = T)) %>%
+  mutate(mean_quantiles_pct_walked = cut(pct_walked,
+                               breaks = quantiles_pct_walked,
+                               labels = labels,
+                               include.lowest = T)) %>% 
+  mutate(
+   gr_pct_Imm_pct_walked = paste(
+      as.numeric(mean_quantiles_pct_Imm), "-",
+      as.numeric(mean_quantiles_pct_walked)
+    )
+  ) %>%
+
+  left_join(biv_color_pct_Imm_pct_walked, by = "gr_pct_Imm_pct_walked")
+
+# Variables: pct_Imm, pct_pubwalkbike
+
+cbind(quantiles_pct_Imm, quantiles_pct_pubwalkbike)
+labels <- c("1", "2", "3", "4")
+labels <- labels[1:length(labels) - 1]
+
+bivariate_quantiles_pct_Imm_pct_pubwalkbike <- CanALE_space %>%
+  mutate(mean_quantiles_pct_Imm = cut(pct_Imm,
+                               breaks = quantiles_pct_Imm,
+                               labels = labels,
+                               include.lowest = T)) %>%
+  mutate(mean_quantiles_pct_pubwalkbike = cut(pct_pubwalkbike,
+                               breaks = quantiles_pct_pubwalkbike,
+                               labels = labels,
+                               include.lowest = T)) %>% 
+  mutate(
+   gr_pct_Imm_pct_active_trans = paste(
+      as.numeric(mean_quantiles_pct_Imm), "-",
+      as.numeric(mean_quantiles_pct_pubwalkbike)
+    )
+  ) %>%
+
+  left_join(biv_color_pct_Imm_pct_pubwalkbike, by = "gr_pct_Imm_pct_pubwalkbike")
+
+# Variables: pct_Imm, pct_AvRent
+
+cbind(quantiles_pct_Imm, AvRent)
+labels <- c("1", "2", "3", "4")
+labels <- labels[1:length(labels) - 1]
+
+bivariate_quantiles_pct_Imm_AvRent <- CanALE_space %>%
+  mutate(mean_quantiles_pct_Imm = cut(pct_Imm,
+                               breaks = quantiles_pct_Imm,
+                               labels = labels,
+                               include.lowest = T)) %>%
+  mutate(mean_quantiles_AvRent = cut(AvRent,
+                               breaks = quantiles_AvRent,
+                               labels = labels,
+                               include.lowest = T)) %>% 
+  mutate(
+   gr_pct_Imm_AvRent = paste(
+      as.numeric(mean_quantiles_pct_Imm), "-",
+      as.numeric(mean_quantiles_AvRent)
+    )
+  ) %>%
+
+  left_join(biv_color_pct_Imm_AvRent, by = "gr_pct_Imm_AvRent")
+
+# Variables: pct_Imm, pct_under40k
+
+cbind(quantiles_pct_Imm, quantiles_pct_under40k)
+labels <- c("1", "2", "3", "4")
+labels <- labels[1:length(labels) - 1]
+
+bivariate_quantiles_pct_Imm_pct_under40k <- CanALE_space %>%
+  mutate(mean_quantiles_pct_Imm = cut(pct_Imm,
+                               breaks = quantiles_pct_Imm,
+                               labels = labels,
+                               include.lowest = T)) %>%
+  mutate(mean_quantiles_pct_under40k = cut(pct_under40k,
+                               breaks = quantiles_pct_under40k,
+                               labels = labels,
+                               include.lowest = T)) %>% 
+  mutate(
+   gr_pct_Imm_pct_under40k = paste(
+      as.numeric(mean_quantiles_pct_Imm), "-",
+      as.numeric(mean_quantiles_pct_under40k)
+    )
+  ) %>%
+
+  left_join(biv_color_pct_Imm_pct_under40k, by = "gr_pct_Imm_pct_under40k")
 ```
 
-
-```{r}
-## cbind variable quantile pairs
-
-
-
-```
-
-
+In this code, we assign bivariate color scale fills to eah quantile variable pair. We use the mean quantiles created in the previous code section to separate the groups assigned 
 
 ```{r}
 ## assign bivariate color scale fills to quantile variable pairs
