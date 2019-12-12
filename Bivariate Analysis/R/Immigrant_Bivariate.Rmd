@@ -17,12 +17,10 @@ output:
 ```{r}
 library(tidyverse) # ggplot2, dplyr, tidyr, readr, purrr, tibble
 library(magrittr) # pipes
-
 library(sf) # spatial data handling
 library(raster) # raster handling (needed for relief)
 library(viridis) # viridis color scale
 library(cowplot) 
-
 library(tidyverse) 
 library(cancensus)
 ```

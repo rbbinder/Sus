@@ -1,0 +1,42 @@
+library(tidyverse) # ggplot2, dplyr, tidyr, readr, purrr, tibble
+library(magrittr) # pipes
+library(sf) # spatial data handling
+library(raster) # raster handling (needed for relief)
+library(viridis) # viridis color scale
+library(cowplot) 
+library(tidyverse) 
+library(cancensus)
+library(sf)
+
+CanALE_space <- st_read(
+  "/Users/Robin/Dropbox/SUS MSSI/Bivariate Analysis/data/Mtl_DA_CANALE/Mtl_DA_CANALE.shp")
+#plot(CanALE_space)
+
+
+## Make variables
+names(CanALE_space)
+# plot(CanALE_space[37])
+# plot(CanALE_space[33])
+
+CanALE_space <- CanALE_space %>% 
+  rowwise() %>% 
+  mutate(pct_Imm = Imm/Pop) %>% 
+  mutate(pct_walked = Walked/Mode) %>% 
+  mutate(pct_biked = Bicycle/Mode) %>% 
+  mutate(pct_pubtrans = Pubtrans/Mode) %>% 
+  mutate(pct_active_trans = sum(Bicycle, Walked)/Mode) %>% 
+  mutate(pct_pubwalkbike = sum(Pubtrans, Bicycle, Walked)/Mode) %>% 
+  mutate(pct_under40k = sum(Under_5k, IN5k_10k, IN10k_15k, IN15k, IN20k_25k, IN25k_30k, IN30k_35k, IN35k_40k)/Households) %>% 
+  mutate(pct_over40k = sum(IN40k_45k, IN45k_50k, IN50k_60k, IN60k_70k, IN70k_80k, IN80k_90k,
+                           IN90k, INOver100k)/Households) %>% 
+  ungroup() %>% 
+  st_as_sf
+
+summary(CanALE_space)
+
+
+
+
+lm(CanALE_space$pct_Imm ~ CanALE_space$pct_active_trans)
+
+
