@@ -1,0 +1,579 @@
+---
+title: "Immigration Bivariate"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+---
+title: "R Notebook"
+output:
+  html_document:
+    df_print: paged
+---
+
+```{r}
+library(tidyverse) # ggplot2, dplyr, tidyr, readr, purrr, tibble
+library(magrittr) # pipes
+
+library(sf) # spatial data handling
+library(raster) # raster handling (needed for relief)
+library(viridis) # viridis color scale
+library(cowplot) 
+
+library(tidyverse) 
+library(cancensus)
+```
+
+```{r}
+#  You may add this option, together with your API key, to your .Rprofile.
+
+options(cancensus.api_key = "CensusMapper_17c24e95162bc73c9dbab358552e22b3")
+options(cancensus.cache_path = '/Users/Robin/Dropbox/SUS MSSI/Bivariate Analysis/data/census_cache')
+
+# Load 2 datasets Dataset 1 + calculate index
+
+
+regions <- 
+  list_census_regions(dataset = 'CA16') %>% 
+  filter(name=="Montréal") %>%
+  as_census_region_list()
+
+# regions <- list(CD="2466", CMA="24462", CSD="2466023")
+house_poor <- get_census(dataset = 'CA16',
+                  level="DA",
+                  vectors="v_CA16_4899",
+                  regions=regions,
+                  geo_format = "sf",
+                  labels='long')
+names(house_poor)[14] <- "percent_house_poor"
+plot(house_poor[14], main="Percent of population that are 'house poor'")
+
+no_eng_fr <- get_census(dataset = 'CA16',
+                  level="DA",
+                  vectors="v_CA16_524",
+                  regions=regions,
+                  geo_format = "sf",
+                  labels='long')
+names(no_eng_fr)[14] <- "no_eng_fr"
+no_eng_fr <- no_eng_fr %>% 
+  mutate(pct_no_eng_fr = (no_eng_fr/Population))
+plot(no_eng_fr[15], main="Percent of population speak neither French nor English")
+
+variables <- cbind(no_eng_fr, house_poor)
+variables <- variables[,c(13, 14, 27, 28)]
+
+print(regions)
+```
+
+```{r}
+# library(sf)
+# CanALE_space <- st_read(
+  # "/Users/Robin/Dropbox/SUS MSSI/Bivariate Analysis/data/Mtl_DA_CANALE/Mtl_DA_CANALE.shp")
+#plot(CanALE_space)
+
+# names(CanALE_space)
+# plot(CanALE_space[50])
+# plot(CanALE_space[33])
+
+```
+
+
+#Compute crossover input
+```{r}
+# create color scale that encodes two variables
+# red for gini and blue for mean income
+# the special notation with gather is due to readibility reasons
+bivariate_color_scale <- tibble(
+  "3 - 3" = "#3F2949", # high transit, relative high income
+  "2 - 3" = "#435786",
+  "1 - 3" = "#4885C1", # low transit, high income
+  "3 - 2" = "#77324C",
+  "2 - 2" = "#806A8A", # medium transit, medium income
+  "1 - 2" = "#89A1C8",
+  "3 - 1" = "#AE3A4E", # high transit, low income
+  "2 - 1" = "#BC7C8F",
+  "1 - 1" = "#CABED0" # low transit, low income
+) %>%
+  gather("group", "fill")
+```
+
+
+
+# Merge datasets, calculate quantiles, and add new field for match id for coloring
+
+```{r}
+#bivariate <- cbind(ro, house_poor$percent_house_poor)
+
+# define number of classes
+no_classes <- 3 
+
+# extract quantiles
+quantiles_variable_1 <- variables %>% 
+  drop_na() %>%
+  pull(pct_no_eng_fr) %>% 
+  quantile(probs = seq(0, 1, length.out = no_classes + 1)) %>%
+  as.vector() # to remove names of quantiles, so idx below is numeric
+
+# extract quantiles
+quantiles_variable_2 <- variables %>% 
+  drop_na() %>%
+  pull(percent_house_poor) %>% 
+  quantile(probs = seq(0, 1, length.out = no_classes + 1)) %>%
+  as.vector() # to remove names of quantiles, so idx below is numeric
+
+#quantiles_variable_2[2] <- 0.001 #cheat
+
+cbind(quantiles_variable_1, quantiles_variable_2)
+
+# # here we create custom labels
+# labels <- imap_chr(quantiles, function(., idx){
+#   return(paste0(round(quantiles[idx] , 2),
+#                              "",
+#                              " – ",
+#                              round(quantiles[idx + 1] , 2),
+#                              ""))
+# })
+
+labels <- c("1", "2", "3", "4")
+
+# we need to remove the last label 
+# because that would be something like "478k - NA"
+labels <- labels[1:length(labels) - 1]
+
+# here we actually create a new 
+# variable on the dataset with the quantiles
+bivariate_quantiles <- variables %>%
+  mutate(mean_quantiles_variable_one = cut(pct_no_eng_fr,
+                               breaks = quantiles_variable_1,
+                               labels = labels,
+                               include.lowest = T)) %>% 
+
+  mutate(mean_quantiles_variable_two = cut(percent_house_poor,
+                               breaks = quantiles_variable_2,
+                               labels = labels,
+                               include.lowest = T)) %>% 
+  mutate(
+    
+    # by pasting the factors together as numbers we match the groups defined
+    # in the tibble bivariate_color_scale
+    group = paste(
+      as.numeric(mean_quantiles_variable_one), "-",
+      as.numeric(mean_quantiles_variable_two)
+    )
+  ) %>%
+  # we now join the actual hex values per "group"
+  # so each municipality knows its hex value based on the his gini and avg
+  # income value
+  left_join(bivariate_color_scale, by = "group")
+#bivariate_quantiles$fill
+```
+
+
+```{r}
+bivariate_color_scale %<>%
+  separate(group, into = c("mean_quantiles_variable_one", "mean_quantiles_variable_two"), sep = " - ") %>%
+  mutate(mean_quantiles_variable_one = as.integer(mean_quantiles_variable_one),
+         mean_quantiles_variable_two = as.integer(mean_quantiles_variable_two))
+
+legend <- ggplot() +
+  geom_tile(
+    data = bivariate_color_scale,
+    mapping = aes(
+      x = mean_quantiles_variable_two,
+      y = mean_quantiles_variable_one,
+      fill = fill)
+  ) +
+  scale_fill_identity() +
+  labs(x = "More house poor ->",
+       y = "Less English and French->") +
+  theme_map() +
+  # make font small enough
+  theme(
+    axis.title = element_text(size = 6)
+  ) +
+  # quadratic tiles
+  coord_fixed()
+
+legend
+```
+
+
+# Map theme settings
+```{r}
+default_background_color <- "transparent"
+  default_font_color <- "black"
+  default_font_family <- "Helvetica"
+  
+theme_map <- function(...) {
+  default_background_color <- "transparent"
+  default_font_color <- "black"
+  default_font_family <- "Helvetica"
+  
+  theme_minimal() +
+  theme(
+    text = element_text(family = default_font_family,
+                        color = default_font_color),
+    # remove all axes
+    axis.line = element_blank(),
+    axis.text.x = element_blank(),
+    axis.text.y = element_blank(),
+    axis.ticks = element_blank(),
+    # add a subtle grid
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    # background colors
+    plot.background = element_rect(fill = default_background_color,
+                                   color = NA),
+    panel.background = element_rect(fill = default_background_color,
+                                    color = NA),
+    legend.background = element_rect(fill = default_background_color,
+                                     color = NA),
+    # borders and margins
+    plot.margin = unit(c(.5, .5, .2, .5), "cm"),
+    panel.border = element_blank(),
+    panel.spacing = unit(c(-.1, 0.2, .2, 0.2), "cm"),
+    # titles
+    legend.title = element_text(size = 11),
+    legend.text = element_text(size = 22, hjust = 0,
+                               color = default_font_color),
+    plot.title = element_text(size = 15, hjust = 0.5,
+                              color = default_font_color),
+    plot.subtitle = element_text(size = 10, hjust = 0.5,
+                                 color = default_font_color,
+                                 margin = margin(b = -0.1,
+                                                 t = -0.1,
+                                                 l = 2,
+                                                 unit = "cm"),
+                                 debug = F),
+    # captions
+    plot.caption = element_text(size = 7,
+                                hjust = .5,
+                                margin = margin(t = 0.2,
+                                                b = 0,
+                                                unit = "cm"),
+                                color = "#939184"),
+  )
+}
+```
+
+
+
+```{r}
+#names(bivariate_quantiles)
+cropped_roads <- st_intersection(bivariate_quantiles, st_buffer(st_centroid(st_union(bivariate_quantiles)), 26000))
+#bivariate_quantiles[which(is.na(bivariate_quantiles$fill.x)), 100] <- adjustcolor("white")
+#bivariate_quantiles[which(is.na(bivariate_quantiles$fill.y)), 103] <- adjustcolor("white")
+
+map_var_1 <-   ggplot(
+  # use the same dataset as before
+  data = cropped_roads
+  ) +
+  # first: draw the relief
+  # geom_raster(
+  #   data = relief,
+  #   aes(
+  #     x = x,
+  #     y = y,
+  #     alpha = value
+  #   )
+  # ) +
+  # use the "alpha hack" (as the "fill" aesthetic is already taken)
+  scale_alpha(name = "",
+              range = c(0.6, 0),
+              guide = F) + # suppress legend
+  # color municipalities according to their gini / income combination
+  geom_sf(
+    aes(
+      fill = mean_quantiles_variable_one
+    ),
+    # use thin white stroke for municipalities
+    color = "white",
+    size = 0
+  ) +
+  # as the sf object municipality_prod_geo has a column with name "fill" that
+  # contains the literal color as hex code for each municipality, we can use
+  # scale_fill_identity here
+  scale_fill_identity() +
+  # use the Viridis color scale
+  scale_fill_viridis(
+    option = "magma",
+    name = "Median household income",
+    alpha = 0.8, # make fill a bit brighter
+    begin = 0.1, # this option seems to be new (compared to 2016):
+    # with this we can truncate the
+    # color scale, so that extreme colors (very dark and very bright) are not
+    # used, which makes the map a bit more aesthetic
+    end = 0.9,
+    discrete = T, # discrete classes, thus guide_legend instead of _colorbar
+    direction = 1, # dark is lowest, yellow is highest
+    guide = guide_legend(
+     keyheight = unit(5, units = "mm"),
+     title.position = "top",
+     reverse = T # display highest income on top
+  )) +
+  # use thicker white stroke for cantons
+  # geom_sf(
+  #   data = canton_geo,
+  #   fill = "transparent",
+  #   color = "white",
+  #   size = 0.5
+  # ) +
+  # # draw lakes in light blue
+  # geom_sf(
+  #   data = lake_geo,
+  #   fill = "#D6F1FF",
+  #   color = "transparent"
+  # ) +
+  # add titles
+  labs(x = NULL,
+         y = NULL#,
+         #subtitle = "Montreal's active living",
+         #title = paste0("Percent of people spending more than 30% of income",
+         #                  " on housing vs. ratio of renting tenants, 2016"),
+         #caption = "Fig. 1. Active living index vs. average property value"
+       ) +
+  # add the theme
+  theme_map() 
+
+map_var_2 <-   ggplot(
+  # use the same dataset as before
+  data = cropped_roads
+  ) +
+  # first: draw the relief
+  # geom_raster(
+  #   data = relief,
+  #   aes(
+  #     x = x,
+  #     y = y,
+  #     alpha = value
+  #   )
+  # ) +
+  # use the "alpha hack" (as the "fill" aesthetic is already taken)
+  scale_alpha(name = "",
+              range = c(0.6, 0),
+              guide = F) + # suppress legend
+  # color municipalities according to their gini / income combination
+  geom_sf(
+    aes(
+      fill = mean_quantiles_variable_two
+    ),
+    # use thin white stroke for municipalities
+    color = "white",
+    size = 0.1
+  ) +
+  # as the sf object municipality_prod_geo has a column with name "fill" that
+  # contains the literal color as hex code for each municipality, we can use
+  # scale_fill_identity here
+  scale_fill_identity() +
+  # use the Viridis color scale
+  scale_fill_viridis(
+    option = "magma",
+    name = "Active living transit index",
+    alpha = 0.8, # make fill a bit brighter
+    begin = 0.1, # this option seems to be new (compared to 2016):
+    # with this we can truncate the
+    # color scale, so that extreme colors (very dark and very bright) are not
+    # used, which makes the map a bit more aesthetic
+    end = 0.9,
+    discrete = T, # discrete classes, thus guide_legend instead of _colorbar
+    direction = 1, # dark is lowest, yellow is highest
+    guide = guide_legend(
+     keyheight = unit(5, units = "mm"),
+     title.position = "top",
+     reverse = T # display highest income on top
+  )) +
+  # use thicker white stroke for cantons
+  # geom_sf(
+  #   data = canton_geo,
+  #   fill = "transparent",
+  #   color = "white",
+  #   size = 0.5
+  # ) +
+  # # draw lakes in light blue
+  # geom_sf(
+  #   data = lake_geo,
+  #   fill = "#D6F1FF",
+  #   color = "transparent"
+  # ) +
+  # add titles
+  labs(x = NULL,
+         y = NULL#,
+         #subtitle = "Montreal's active living",
+         #title = paste0("Percent of people spending more than 30% of income",
+         #                  " on housing vs. ratio of renting tenants, 2016"),
+         #caption = "Fig. 1. Active living index vs. average property value"
+       ) +
+  # add the theme
+  theme_map()  
+
+map_total <-   ggplot(
+  # use the same dataset as before
+  data = cropped_roads
+  ) +
+  # first: draw the relief
+  # geom_raster(
+  #   data = relief,
+  #   aes(
+  #     x = x,
+  #     y = y,
+  #     alpha = value
+  #   )
+  # ) +
+  # use the "alpha hack" (as the "fill" aesthetic is already taken)
+  scale_alpha(name = "",
+              range = c(0.6, 0),
+              guide = F) + # suppress legend
+  # color municipalities according to their gini / income combination
+  geom_sf(
+    aes(
+      fill = fill
+    ),
+    # use thin white stroke for municipalities
+    color = "white",
+    size = 0
+  ) +
+  # as the sf object municipality_prod_geo has a column with name "fill" that
+  # contains the literal color as hex code for each municipality, we can use
+  # scale_fill_identity here
+  scale_fill_identity() +
+  # use thicker white stroke for cantons
+  # geom_sf(
+  #   data = canton_geo,
+  #   fill = "transparent",
+  #   color = "white",
+  #   size = 0.5
+  # ) +
+  # # draw lakes in light blue
+  # geom_sf(
+  #   data = lake_geo,
+  #   fill = "#D6F1FF",
+  #   color = "transparent"
+  # ) +
+  # add titles
+  labs(x = NULL,
+         y = NULL,
+         subtitle = "Montreal's languages and housing poor",
+         title = paste0("Percent of people without English or French",
+                           " vs. ratio of house poor tenants, 2016"),
+         #caption = "Fig. 1. Active living index vs. average property value"
+       ) +
+  # add the theme
+  theme_map() 
+
+map_var_1
+map_var_2
+map_total
+
+
+```
+
+
+```{r}
+ggdraw() +
+  draw_plot(map_total, 0, 0, 1.05, 1.05) +
+  draw_plot(legend, 0.025, 0.0, 0.25, 0.25) 
+```
+
+
+```{r}
+par(bg=NA)
+library(png)
+png(filename = "figures/home value vs active living.png", width = 8, height = 8, units = "in", res=1000, bg = "transparent")
+ggdraw() +
+  draw_plot(map_total, 0, 0, 1.05, 1.05) #+
+  #draw_plot(legend, 0.025, 0.0, 0.25, 0.25) 
+
+dev.off()
+  
+```
+
+
+```{r}
+boxplot(bivariate_quantiles$Walked/bivariate_quantiles$Mode)
+boxplot(bivariate_quantiles$Bicycle/bivariate_quantiles$Mode)
+```
+
+
+
+```{r}
+ 
+library(ggplot2)
+
+su <- as.data.frame(cbind(c( bivariate_quantiles$Bicycle, bivariate_quantiles$Walked), 
+                          c(rep("Bicycle", length(bivariate_quantiles$Bicycle)), rep("Walked", length(bivariate_quantiles$Walked))), 
+                          c(bivariate_quantiles$group, bivariate_quantiles$group)))
+colnames(su) <- c("number", "type","group")
+su[,1] <- as.numeric(su[,1])/c(bivariate_quantiles$Mode,bivariate_quantiles$Mode)
+su[which(su[,1] == 0),1] <- NA
+levels(as.factor(su[,1]))
+
+#par(mfcol=c(4,1), mar=c(0,0,0,0))
+su.sub1 <- subset(su, group=="1 - 1")
+su.sub2 <- subset(su, group=="1 - 3")
+su.sub3 <- subset(su, group=="3 - 1")
+su.sub4 <- subset(su, group=="3 - 3")
+
+p1 <- ggplot(data= su.sub1, aes(x=reorder(type, desc(type)), y=number)) + 
+ # geom_boxplot() +
+  geom_jitter(position=position_jitter(0.1), color=adjustcolor("grey", alpha.f = 0.4), shape=19 ) +
+  coord_cartesian(ylim=c(0,0.5)) + theme_bw() + theme(panel.border = element_blank(), panel.grid.major = element_blank(),
+panel.grid.minor = element_blank(), axis.line = element_line(colour = "black")) + ylab("") + xlab("")
+
+p1 + stat_summary(fun.data=mean_sdl,
+                 geom="pointrange", color=c("red","blue"), ymin=0)
+ggsave2("/Users/Ty/Dropbox/Dendritic connectivity/Poster of 2019 MSSI symposium/images/jitter_plot_1.png")
+
+p2 <- ggplot(data= su.sub2, aes(x=reorder(type, desc(type)), y=number)) + 
+ # geom_boxplot() +
+  geom_jitter(position=position_jitter(0.1), color=adjustcolor("grey", alpha.f = 0.4), shape=19 ) +
+  coord_cartesian(ylim=c(0,0.5)) + theme_bw() + theme(panel.border = element_blank(), panel.grid.major = element_blank(),
+panel.grid.minor = element_blank(), axis.line = element_line(colour = "black")) + ylab("") + xlab("")
+
+p2 + stat_summary(fun.data=mean_sdl,
+                 geom="pointrange", color=c("red","blue"), ymin=0)
+ggsave2("/Users/Ty/Dropbox/Dendritic connectivity/Poster of 2019 MSSI symposium/images/jitter_plot_2.png")
+
+
+p3 <- ggplot(data= su.sub3, aes(x=reorder(type, desc(type)), y=number)) + 
+ # geom_boxplot() +
+  geom_jitter(position=position_jitter(0.1), color=adjustcolor("grey", alpha.f = 0.4), shape=19 ) +
+  coord_cartesian(ylim=c(0,0.5)) + theme_bw() + theme(panel.border = element_blank(), panel.grid.major = element_blank(),
+panel.grid.minor = element_blank(), axis.line = element_line(colour = "black")) + ylab("") + xlab("")
+
+p3 + stat_summary(fun.data=mean_sdl,
+                 geom="pointrange", color=c("red","blue"), ymin=0)
+ggsave2("/Users/Ty/Dropbox/Dendritic connectivity/Poster of 2019 MSSI symposium/images/jitter_plot_3.png")
+
+
+p4 <- ggplot(data= su.sub4, aes(x=reorder(type, desc(type)), y=number)) + 
+ # geom_boxplot() +
+  geom_jitter(position=position_jitter(0.1), color=adjustcolor("grey", alpha.f = 0.4), shape=19 ) +
+  coord_cartesian(ylim=c(0,0.5)) + theme_bw() + theme(panel.border = element_blank(), panel.grid.major = element_blank(),
+panel.grid.minor = element_blank(), axis.line = element_line(colour = "black")) + ylab("") + xlab("")
+
+p4 + stat_summary(fun.data=mean_sdl,
+                 geom="pointrange", color=c("red","blue"), ymin=0)
+ggsave2("/Users/Ty/Dropbox/Dendritic connectivity/Poster of 2019 MSSI symposium/images/jitter_plot_4.png")
+
+
+
+#levels(as.factor(su.sub$type))
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -135,12 +135,13 @@ shinyUI(dashboardPage(skin="black",
                                        "45-60 minutes to work" = "B_45_59_proportion_quant3",
                                        "Household income less than 40K" = "under_40K_quant3",
                                        "Household income greater than 40K" = "over_40K_quant3",
-                                       "canALE index" = "ale_tranis_quant3")))
-                                   # fluidRow(
-                                   #   tags$style(type = "text/css", "html, body {width:100%;height:100%}"),
-                                   #   column(6, plotOutput("map3"), height=300)
+                                       "canALE index" = "ale_tranis_quant3"))),
+                                   fluidRow(
+                                     tags$style(type = "text/css", "html, body {width:100%;height:100%}"),
+                                     column(12, plotOutput("map3"), height=300)
+                      
 
-                                     )))))
+                                     )))))) 
 
 
 
