@@ -152,26 +152,26 @@ load(file = "data/data_for_plot.Rdata")
       data_for_plot %>%
       dplyr::select(input$data_for_plot_left, input$data_for_plot_right)
 
-    # data_for_plot_bivariate <- data_for_plot_bivariate %>%
-    #   mutate(
-    #     group = paste(
-    #       as.numeric(input$data_for_plot_left), "-",
-    #       as.numeric(input$data_for_plot_right)
-    #     )
-    #   ) %>%
-    #   left_join(bivariate_color_scale, by = "group")
+    data_for_plot_bivariate <- data_for_plot_bivariate %>%
+      mutate(
+        group = paste(
+          as.numeric(input$data_for_plot_left), "-",
+          as.numeric(input$data_for_plot_right)
+        )
+      ) %>%
+      left_join(bivariate_color_scale, by = "group")
 
     ggplot(input$data_for_plot_bivariate) +
       geom_sf(
         aes(
-          fill = input$data_for_plot_bivariate)
+          fill = as.factor(input$data_for_plot_bivariate))
         ,
         # use thin white stroke for municipalities
         color = "white",
         size = 0.01
       ) +
       # scale_fill_identity() +
-      scale_fill_manual(bivariate_color_scale) +
+      scale_fill_identity() +
       theme_map()
 
   })
