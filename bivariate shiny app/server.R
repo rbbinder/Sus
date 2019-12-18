@@ -170,7 +170,6 @@ load(file = "data/data_for_plot.Rdata")
         color = "white",
         size = 0.01
       ) +
-      # scale_fill_identity() +
       scale_fill_identity() +
       theme_map()
 
