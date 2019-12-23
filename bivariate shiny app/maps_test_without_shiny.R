@@ -7,17 +7,14 @@ require(leaflet)
 require(RColorBrewer)
 require(tidyverse)
 
-
-# Define server logic required to draw a histogram
-shinyServer(function(input, output, session) {
   
-## import data_for_plot file & duplicate
-
-load(file = "data/data_for_plot.Rdata")
-
-#data_for_plot2 <- data_for_plot
-
-## save colors
+  ## import data_for_plot file & duplicate
+  
+  load(file = "data/data_for_plot.Rdata")
+  
+  #data_for_plot2 <- data_for_plot
+  
+  ## save colors
   bivariate_color_scale <- tibble(
     "3 - 3" = "#3F2949", # high inequality, high income
     "2 - 3" = "#435786",
@@ -30,7 +27,7 @@ load(file = "data/data_for_plot.Rdata")
     "1 - 1" = "#CABED0" # low inequality, low income
   ) %>%
     gather("group", "fill")
-
+  
   color_scale <- tibble(
     "6" = "#AE3A4E",
     "5" = "#BC7C8F", # medium inequality, medium income
@@ -40,29 +37,29 @@ load(file = "data/data_for_plot.Rdata")
     "1" = "#CABED0" # low inequality, low income
   ) %>%
     gather("group", "fill") 
-
-   #color_scale <- cbind(color_scale[,1], color_scale) %>% 
-     #as.numeric(color_scale)
-   # names(color_scale) <- c("pers","haps", "fill_color")
-   # color_scale$pers <- as.numeric(color_scale$pers)
-   # color_scale$haps <- as.numeric(color_scale$haps)
-
+  
+  #color_scale <- cbind(color_scale[,1], color_scale) %>% 
+  #as.numeric(color_scale)
+  # names(color_scale) <- c("pers","haps", "fill_color")
+  # color_scale$pers <- as.numeric(color_scale$pers)
+  # color_scale$haps <- as.numeric(color_scale$haps)
+  
   colors <- color_scale$fill
   colors <- as.character(colors)
-
- # g <- grid::circleGrob(gp = grid::gpar(fill = "white", col="white"))
-
-# ## maps output
-
+  
+  # g <- grid::circleGrob(gp = grid::gpar(fill = "white", col="white"))
+  
+  # ## maps output
+  
   default_background_color <- "transparent"
   default_font_color <- "black"
   default_font_family <- "Helvetica"
-
+  
   theme_map <- function(...) {
     default_background_color <- "transparent"
     default_font_color <- "black"
     default_font_family <- "Helvetica"
-
+    
     theme_minimal() +
       theme(
         text = element_text(family = default_font_family,
@@ -109,17 +106,14 @@ load(file = "data/data_for_plot.Rdata")
                                     color = "#939184"),
         ...
       )
- }
+  }
   
-  output$map1 <- renderPlot({
-
-    data_for_plot_left <- data_for_plot %>%
-      dplyr::select(input$data_for_plot_left)
-
-    ggplot(data_for_plot_left) +
+  data_for_plot_left <- data_for_plot$AvVal_quant3  
+  
+map1 <- ggplot(data_for_plot) +
       geom_sf(
         aes(
-          fill = as.factor(input$data_for_plot_left)
+          fill = as.factor(data_for_plot$AvVal_quant3)
         ),
         # use thin white stroke for municipalities
         color = "white",
@@ -128,42 +122,35 @@ load(file = "data/data_for_plot.Rdata")
       scale_fill_manual(values=rev(colors[c(1:3)]))+
       theme_map()
 
-  })
-
-
-  output$map2 <- renderPlot({
-    data_for_plot_right <- data_for_plot %>%
-      dplyr::select(input$data_for_plot_right)
-
-    ggplot(data_for_plot_right) +
-      geom_sf(
-        aes(
-          fill = as.factor(input$data_for_plot_right)
-        ),
-        # use thin white stroke for municipalities
-        color = "white",
-        size = 0.01
-      ) +
-      scale_fill_manual(values=rev(colors[c(4:6)]))+
-      theme_map()
-  })
+map1
   
-  output$map3 <- renderPlot({
-    data_for_plot_bivariate <- 
-      data_for_plot %>%
-      dplyr::select(input$data_for_plot_left, input$data_for_plot_right)
+data_for_plot_right <- data_for_plot$Non_Im_proportion_quant3
+  
+map2 <- ggplot(data_for_plot) +
+    geom_sf(
+      aes(
+        fill = as.factor(data_for_plot$Non_Im_proportion_quant3)
+      ),
+      # use thin white stroke for municipalities
+      color = "white",
+      size = 0.01
+    ) +
+    scale_fill_manual(values=rev(colors[c(4:6)]))+
+    theme_map()
 
-    data_for_plot_bivariate <- data_for_plot_bivariate %>%
-      mutate(
-        group = paste(
-          as.numeric(input$data_for_plot_left), "-",
-          as.numeric(input$data_for_plot_right)
-        )
-      ) %>%
-      na.omit() %>% 
-      left_join(bivariate_color_scale, by = "group") 
+map2
 
-    ggplot(data_for_plot_bivariate) +
+data_for_plot_bivariate <- data_for_plot %>%
+  mutate(
+    group = paste(
+      as.numeric(data_for_plot$AvVal_quant3), "-",
+      as.numeric(data_for_plot$Non_Im_proportion_quant3)   
+      )
+  ) %>%
+  na.omit() %>% 
+  left_join(bivariate_color_scale, by = "group") 
+
+map3 <- ggplot(data_for_plot_bivariate) +
       geom_sf(
         aes(
           fill = as.factor(data_for_plot_bivariate$fill))
@@ -175,8 +162,5 @@ load(file = "data/data_for_plot.Rdata")
       scale_fill_identity() +
       theme_map()
 
-  })
-  
-})
-  
-  
+map3  
+
