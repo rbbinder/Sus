@@ -112,14 +112,13 @@ load(file = "data/data_for_plot.Rdata")
  }
   
   output$map1 <- renderPlot({
-
     data_for_plot_left <- data_for_plot %>%
       dplyr::select(input$data_for_plot_left)
-
+    colnames(data_for_plot_left) <- c("left_variable",  "geometry")
     ggplot(data_for_plot_left) +
       geom_sf(
         aes(
-          fill = as.factor(input$data_for_plot_left)
+          fill = as.factor(left_variable)
         ),
         # use thin white stroke for municipalities
         color = "white",
@@ -127,18 +126,16 @@ load(file = "data/data_for_plot.Rdata")
       ) +
       scale_fill_manual(values=rev(colors[c(1:3)]))+
       theme_map()
-
   })
-
-
+  
   output$map2 <- renderPlot({
     data_for_plot_right <- data_for_plot %>%
       dplyr::select(input$data_for_plot_right)
-
+    colnames(data_for_plot_right) <- c("right_variable",  "geometry")
     ggplot(data_for_plot_right) +
       geom_sf(
         aes(
-          fill = as.factor(input$data_for_plot_right)
+          fill = as.factor(right_variable)
         ),
         # use thin white stroke for municipalities
         color = "white",
@@ -146,14 +143,15 @@ load(file = "data/data_for_plot.Rdata")
       ) +
       scale_fill_manual(values=rev(colors[c(4:6)]))+
       theme_map()
+
   })
   
   output$map3 <- renderPlot({
     data_for_plot_bivariate <- 
       data_for_plot %>%
-      dplyr::select(input$data_for_plot_left, input$data_for_plot_right)
-
-    data_for_plot_bivariate <- data_for_plot_bivariate %>%
+    #   dplyr::select(input$data_for_plot_left, input$data_for_plot_right)
+    # 
+    # data_for_plot_bivariate <- data_for_plot_bivariate %>%
       mutate(
         group = paste(
           as.numeric(input$data_for_plot_left), "-",
@@ -172,7 +170,7 @@ load(file = "data/data_for_plot.Rdata")
         color = "white",
         size = 0.01
       ) +
-      scale_fill_identity() +
+      scale_fill_manual(values=rev(colors[c(1:9)])) +
       theme_map()
 
   })
