@@ -171,7 +171,8 @@ load(file = "data/data_for_plot.Rdata")
     ggplot(data_for_plot_bivariate) +
       geom_sf(
         aes(
-          fill = as.factor(fill))
+          fill = as.factor(group)
+        )
         ,
         # use thin white stroke for municipalities
         color = "white",
