@@ -154,7 +154,8 @@ load(file = "data/data_for_plot.Rdata")
       dplyr::select(input$data_for_plot_left, input$data_for_plot_right)
     
     if(length(colnames(data_for_plot_bivariate)) == 2){
-      data_for_plot_bivariate <- cbind(data_for_plot_bivariate[,1], data_for_plot_bivariate)[,1:3]}
+      data_for_plot_bivariate <- 
+        cbind(data_for_plot_bivariate[,1], data_for_plot_bivariate[,1:3])}
     print(head(data_for_plot_bivariate))
     colnames(data_for_plot_bivariate) <- 
       c("left_variable", "right_variable", "geometry")
@@ -172,16 +173,40 @@ load(file = "data/data_for_plot.Rdata")
     ggplot(data_for_plot_bivariate) +
       geom_sf(
         aes(
-          fill = as.factor(group)
+          fill = as.factor(data_for_plot_bivariate$fill)
         )
         ,
         # use thin white stroke for municipalities
         color = "white",
         size = 0.01
       ) +
-      scale_fill_manual(values=rev(colors_bi[c(1:9)])) +
+      scale_fill_manual(values=rev(colors_bi)) +
       theme_map()
 
+  })
+  
+  output$hist1 <- renderPlot({
+    data_for_plot_bivariate <- 
+      data_for_plot %>%
+      dplyr::select(input$data_for_plot_left, input$data_for_plot_right)
+    
+    if(length(colnames(data_for_plot_bivariate)) == 2){
+      data_for_plot_bivariate <- 
+        cbind(data_for_plot_bivariate[,1], data_for_plot_bivariate[,1:3])}
+    print(head(data_for_plot_bivariate))
+    colnames(data_for_plot_bivariate) <- 
+      c("left_variable", "right_variable", "geometry")
+    
+    data_for_plot_bivariate <- data_for_plot_bivariate %>%
+      mutate(
+        group = paste(
+          as.numeric(input$data_for_plot_left), "-",
+          as.numeric(input$data_for_plot_right)
+        )
+      ) %>%
+      # na.omit() %>% 
+      left_join(bivariate_color_scale, by = "group") 
+    
   })
   
 })
