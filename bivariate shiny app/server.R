@@ -49,6 +49,7 @@ load(file = "data/data_for_plot.Rdata")
 
   colors <- color_scale$fill
   colors <- as.character(colors)
+  colors_bi <- bivariate_color_scale$fill
 
  # g <- grid::circleGrob(gp = grid::gpar(fill = "white", col="white"))
 
@@ -149,28 +150,34 @@ load(file = "data/data_for_plot.Rdata")
   output$map3 <- renderPlot({
     data_for_plot_bivariate <- 
       data_for_plot %>%
-    #   dplyr::select(input$data_for_plot_left, input$data_for_plot_right)
-    # 
-    # data_for_plot_bivariate <- data_for_plot_bivariate %>%
+      dplyr::select(input$data_for_plot_left, input$data_for_plot_right)
+    
+    if(length(colnames(data_for_plot_bivariate)) == 2){
+      data_for_plot_bivariate <- cbind(data_for_plot_bivariate[,1], data_for_plot_bivariate)[,1:3]}
+    print(head(data_for_plot_bivariate))
+    colnames(data_for_plot_bivariate) <- 
+      c("left_variable", "right_variable", "geometry")
+    
+    data_for_plot_bivariate <- data_for_plot_bivariate %>%
       mutate(
         group = paste(
           as.numeric(input$data_for_plot_left), "-",
           as.numeric(input$data_for_plot_right)
         )
       ) %>%
-      na.omit() %>% 
+      # na.omit() %>% 
       left_join(bivariate_color_scale, by = "group") 
 
     ggplot(data_for_plot_bivariate) +
       geom_sf(
         aes(
-          fill = as.factor(data_for_plot_bivariate$fill))
+          fill = as.factor(fill))
         ,
         # use thin white stroke for municipalities
         color = "white",
         size = 0.01
       ) +
-      scale_fill_manual(values=rev(colors[c(1:9)])) +
+      scale_fill_manual(values=rev(colors_bi[c(1:9)])) +
       theme_map()
 
   })

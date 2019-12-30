@@ -25,7 +25,8 @@ shinyUI(dashboardPage(skin="black",
                                      column(6, plotOutput("map2"), height=300)),
                                    fluidRow(
                                      tags$style(type = "text/css", "html, body {width:100%;height:50%}"),
-                                     column(width = 6, selectInput("data_for_plot_left", label=h3("Choose a variable"), choices = list(
+                                     column(width = 6, selectInput("data_for_plot_left", label=h3("Choose a variable"), 
+                                                                   selected = "ale_tranis_quant3", choices = list(
                                        "Tenant housing" = "TenantH_quant3",
                                        "Sublet rental" = "Subs_quant3",
                                        "Over 30 yrs old" = "Plus30_quant3",
@@ -81,7 +82,8 @@ shinyUI(dashboardPage(skin="black",
                                        "Household income greater than 40K" = "over_40K_quant3",
                                        "canALE index" = "ale_tranis_quant3")))),
 
-                                     column(width = 6, selectInput("data_for_plot_right", label=h3("Choose another variable"), choices = list(
+                                     column(width = 6, selectInput("data_for_plot_right", label=h3("Choose another variable"), 
+                                                                   selected = "over_40K_quant3", choices = list(
                                        "Tenant housing" = "TenantH_quant3",
                                        "Sublet rental" = "Subs_quant3",
                                        "Over 30 yrs old" = "Plus30_quant3",
