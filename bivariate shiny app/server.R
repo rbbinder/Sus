@@ -185,29 +185,29 @@ load(file = "data/data_for_plot.Rdata")
 
   })
   
-  output$hist1 <- renderPlot({
-    data_for_plot_bivariate <- 
-      data_for_plot %>%
-      dplyr::select(input$data_for_plot_left, input$data_for_plot_right)
+  # output$hist1 <- renderPlot({
+  #   data_for_plot_bivariate <- 
+  #     data_for_plot %>%
+  #     dplyr::select(input$data_for_plot_left, input$data_for_plot_right)
+  #   
+  #   if(length(colnames(data_for_plot_bivariate)) == 2){
+  #     data_for_plot_bivariate <- 
+  #       cbind(data_for_plot_bivariate[,1], data_for_plot_bivariate[,1:3])}
+  #   print(head(data_for_plot_bivariate))
+  #   colnames(data_for_plot_bivariate) <- 
+  #     c("left_variable", "right_variable", "geometry")
+  #   
+  #   data_for_plot_bivariate <- data_for_plot_bivariate %>%
+  #     mutate(
+  #       group = paste(
+  #         as.numeric(input$data_for_plot_left), "-",
+  #         as.numeric(input$data_for_plot_right)
+  #       )
+  #     ) %>%
+  #     # na.omit() %>% 
+  #     left_join(bivariate_color_scale, by = "group") 
     
-    if(length(colnames(data_for_plot_bivariate)) == 2){
-      data_for_plot_bivariate <- 
-        cbind(data_for_plot_bivariate[,1], data_for_plot_bivariate[,1:3])}
-    print(head(data_for_plot_bivariate))
-    colnames(data_for_plot_bivariate) <- 
-      c("left_variable", "right_variable", "geometry")
-    
-    data_for_plot_bivariate <- data_for_plot_bivariate %>%
-      mutate(
-        group = paste(
-          as.numeric(input$data_for_plot_left), "-",
-          as.numeric(input$data_for_plot_right)
-        )
-      ) %>%
-      # na.omit() %>% 
-      left_join(bivariate_color_scale, by = "group") 
-    
-  })
+  # })
   
 })
   
