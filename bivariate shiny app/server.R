@@ -50,6 +50,7 @@ load(file = "data/data_for_plot.Rdata")
   colors <- color_scale$fill
   colors <- as.character(colors)
   colors_bi <- bivariate_color_scale$fill
+  colors_bi <- as.character(colors_bi)
 
  # g <- grid::circleGrob(gp = grid::gpar(fill = "white", col="white"))
 
