@@ -117,6 +117,17 @@ load(file = "data/data_for_plot.Rdata")
   output$map1 <- renderPlot({
     data_for_plot_left <- data_for_plot %>%
       dplyr::select(input$data_for_plot_left)
+    
+    quant_list <- c("TenantH"    ,           "Subs"       ,           "Plus30"      ,          
+                    "MedRent"  , "AvRent"              ,  "MedMort"        ,       "AvMort"      ,          "MedVal", "AvVal",         "Owner"      ,           "Wmortg"       ,         "Plus30Own"            ,"CTIR"    ,           
+                    "Less30"        ,        "More30"  ,              "Househol_1"  ,
+                    "Suitable"     ,         "NonSuit","Under_5k_proportion" , "IN5k_10k_proportion" ,  "IN10k_15k_proportion",  "IN15k_proportion" ,     "IN20k_25k_proportion", "IN25k_30k_proportion" , "IN30k_35k_proportion"  ,"IN35k_40k_proportion" , "IN40k_45k_proportion", "IN45k_50k_proportion" , "IN50k_60k_proportion" , "IN60k_70k_proportion" , "IN70k_80k_proportion" , "IN80k_90k_proportion",  "IN90k_proportion"  ,    "INOver100k_proportion", "IN100k_125_proportion" ,"IN125k_150_proportion", "IN150k_200_proportion" ,"Over200k_proportion" ,  "Non_Im_proportion" ,"Imm_proportion"   ,     "Imm_5year_proportion" , "driver_proportion"  ,   "passenger_proportion" , "Pubtrans_proportion" ,  "Walked_proportion" ,    "Bicycle_proportion" ,   "Other_proportion" , "T_15_proportion"   ,    "B15_29_proportion" ,    "B30_44_proportion" ,    "O_60_proportion"  ,    "B_45_59_proportion" ,   "under_40K"    ,         "over_40K", "ale_tranis")
+    
+    data_for_plot_left %>% 
+      mutate_at(quant_list,
+                funs(quant3 = ntile(.,3))
+      ) 
+    
     colnames(data_for_plot_left) <- c("left_variable",  "geometry")
     ggplot(data_for_plot_left) +
       geom_sf(
@@ -134,6 +145,16 @@ load(file = "data/data_for_plot.Rdata")
   output$map2 <- renderPlot({
     data_for_plot_right <- data_for_plot %>%
       dplyr::select(input$data_for_plot_right)
+    
+    quant_list <- c("TenantH"    ,           "Subs"       ,           "Plus30"      ,          
+                    "MedRent"  , "AvRent"              ,  "MedMort"        ,       "AvMort"      ,          "MedVal", "AvVal",         "Owner"      ,           "Wmortg"       ,         "Plus30Own"            ,"CTIR"    ,           
+                    "Less30"        ,        "More30"  ,              "Househol_1"  ,
+                    "Suitable"     ,         "NonSuit","Under_5k_proportion" , "IN5k_10k_proportion" ,  "IN10k_15k_proportion",  "IN15k_proportion" ,     "IN20k_25k_proportion", "IN25k_30k_proportion" , "IN30k_35k_proportion"  ,"IN35k_40k_proportion" , "IN40k_45k_proportion", "IN45k_50k_proportion" , "IN50k_60k_proportion" , "IN60k_70k_proportion" , "IN70k_80k_proportion" , "IN80k_90k_proportion",  "IN90k_proportion"  ,    "INOver100k_proportion", "IN100k_125_proportion" ,"IN125k_150_proportion", "IN150k_200_proportion" ,"Over200k_proportion" ,  "Non_Im_proportion" ,"Imm_proportion"   ,     "Imm_5year_proportion" , "driver_proportion"  ,   "passenger_proportion" , "Pubtrans_proportion" ,  "Walked_proportion" ,    "Bicycle_proportion" ,   "Other_proportion" , "T_15_proportion"   ,    "B15_29_proportion" ,    "B30_44_proportion" ,    "O_60_proportion"  ,    "B_45_59_proportion" ,   "under_40K"    ,         "over_40K", "ale_tranis")
+    
+    data_for_plot_right %>% 
+      mutate_at(quant_list,
+                funs(quant3 = ntile(.,3))
+      ) 
     colnames(data_for_plot_right) <- c("right_variable",  "geometry")
     ggplot(data_for_plot_right) +
       geom_sf(
@@ -165,7 +186,7 @@ load(file = "data/data_for_plot.Rdata")
       mutate(group = paste(left_variable,
                            right_variable,
                            sep = " - ")) %>%
-      # na.omit() %>% 
+      na.omit() %>% 
       left_join(bivariate_color_scale, by = "group") 
 
     ggplot(data_for_plot_bivariate) +
@@ -184,9 +205,9 @@ load(file = "data/data_for_plot.Rdata")
   })
   
   output$hist1 <- renderPlot({
-    data_for_plot_bivariate <- 
+    data_for_hist_bivariate <- 
     data_for_plot %>%
-    dplyr::select(input$data_for_plot_left, input$data_for_plot_right)
+    dplyr::select(input$data_for_hist_left, input$data_for_hist_right)
     
     if(length(colnames(data_for_plot_bivariate)) == 2){
       data_for_plot_bivariate <- 
