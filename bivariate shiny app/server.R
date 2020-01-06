@@ -4,237 +4,225 @@ require(raster)
 require(ape)
 require(spdep)
 require(leaflet)
-require(RColorBrewer)
 require(tidyverse)
 require(ggplot2)
 
 
-# Define server logic required to draw a histogram
+
+### Colours ####################################################################
+
+colour_scale <- 
+  # Low income
+  c("#CABED0", "#89A1C8", "#4885C1", 
+    # Medium income
+    "#BC7C8F", "#806A8A", "#435786", 
+    # High income
+    "#AE3A4E", "#77324C", "#3F2949")
+
+
+### Theme function #############################################################
+
+theme_map <- function(...) {
+  default_background_colour <- "transparent"
+  default_font_colour <- "black"
+  default_font_family <- "Helvetica"
+  
+  theme_minimal() +
+    theme(
+      text = element_text(family = default_font_family,
+                          colour = default_font_colour),
+      # remove all axes
+      axis.line = element_blank(),
+      axis.text.x = element_blank(),
+      axis.text.y = element_blank(),
+      axis.ticks = element_blank(),
+      # add a subtle grid
+      panel.grid.major = element_blank(),
+      panel.grid.minor = element_blank(),
+      # background colours
+      plot.background = element_rect(fill = default_background_colour,
+                                     colour = NA),
+      panel.background = element_rect(fill = default_background_colour,
+                                      colour = NA),
+      legend.background = element_rect(fill = default_background_colour,
+                                       colour = NA),
+      legend.position = "none",
+      # borders and margins
+      plot.margin = unit(c(.5, .5, .2, .5), "cm"),
+      panel.border = element_blank(),
+      panel.spacing = unit(c(-.1, 0.2, .2, 0.2), "cm"),
+      # titles
+      legend.title = element_text(size = 11),
+      legend.text = element_text(size = 22, hjust = 0,
+                                 colour = default_font_colour),
+      plot.title = element_text(size = 15, hjust = 0.5,
+                                colour = default_font_colour),
+      plot.subtitle = element_text(size = 10, hjust = 0.5,
+                                   colour = default_font_colour,
+                                   margin = margin(b = -0.1,
+                                                   t = -0.1,
+                                                   l = 2,
+                                                   unit = "cm"),
+                                   debug = F),
+      # captions
+      plot.caption = element_text(size = 7,
+                                  hjust = .5,
+                                  margin = margin(t = 0.2,
+                                                  b = 0,
+                                                  unit = "cm"),
+                                  colour = "#939184"),
+      ...
+    )
+}
+
+
+### Simple map function ########################################################
+
+map_function <- function(data, variable_name, colours) {
+  
+  ggplot(data) +
+    geom_sf(aes(fill = as.factor(ntile({{ variable_name }}, 3))), 
+            colour = "transparent", size = 0) +
+    scale_fill_manual(values = colours, na.value = "grey50") +
+    theme_map()
+}
+
+
+### shinyServer ################################################################
+
 shinyServer(function(input, output, session) {
   
-## import data_for_plot file & duplicate
-
-load(file = "data/data_for_plot.Rdata")
-
-#data_for_plot2 <- data_for_plot
-
-## save colors
-  bivariate_color_scale <- tibble(
-    "3 - 3" = "#3F2949", # high inequality, high income
-    "2 - 3" = "#435786",
-    "1 - 3" = "#4885C1", # low inequality, high income
-    "3 - 2" = "#77324C",
-    "2 - 2" = "#806A8A", # medium inequality, medium income
-    "1 - 2" = "#89A1C8",
-    "3 - 1" = "#AE3A4E", # high inequality, low income
-    "2 - 1" = "#BC7C8F",
-    "1 - 1" = "#CABED0" # low inequality, low income
-  ) %>%
-    gather("group", "fill")
-
-  color_scale <- tibble(
-    "6" = "#AE3A4E",
-    "5" = "#BC7C8F", # medium inequality, medium income
-    "4" = "#CABED0",
-    "3" = "#4885C1", # high inequality, low income
-    "2" = "#89A1C8",
-    "1" = "#CABED0" # low inequality, low income
-  ) %>%
-    gather("group", "fill") 
-
-   #color_scale <- cbind(color_scale[,1], color_scale) %>% 
-     #as.numeric(color_scale)
-   # names(color_scale) <- c("pers","haps", "fill_color")
-   # color_scale$pers <- as.numeric(color_scale$pers)
-   # color_scale$haps <- as.numeric(color_scale$haps)
-
-  colors <- color_scale$fill
-  colors <- as.character(colors)
-  colors_bi <- bivariate_color_scale$fill
-  colors_bi <- as.character(colors_bi)
-
- # g <- grid::circleGrob(gp = grid::gpar(fill = "white", col="white"))
-
-# ## maps output
-
-  default_background_color <- "transparent"
-  default_font_color <- "black"
-  default_font_family <- "Helvetica"
-
-  theme_map <- function(...) {
-    default_background_color <- "transparent"
-    default_font_color <- "black"
-    default_font_family <- "Helvetica"
-
-    theme_minimal() +
-      theme(
-        text = element_text(family = default_font_family,
-                            color = default_font_color),
-        # remove all axes
-        axis.line = element_blank(),
-        axis.text.x = element_blank(),
-        axis.text.y = element_blank(),
-        axis.ticks = element_blank(),
-        # add a subtle grid
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        # background colors
-        plot.background = element_rect(fill = default_background_color,
-                                       color = NA),
-        panel.background = element_rect(fill = default_background_color,
-                                        color = NA),
-        legend.background = element_rect(fill = default_background_color,
-                                         color = NA),
-        legend.position = "none",
-        # borders and margins
-        plot.margin = unit(c(.5, .5, .2, .5), "cm"),
-        panel.border = element_blank(),
-        panel.spacing = unit(c(-.1, 0.2, .2, 0.2), "cm"),
-        # titles
-        legend.title = element_text(size = 11),
-        legend.text = element_text(size = 22, hjust = 0,
-                                   color = default_font_color),
-        plot.title = element_text(size = 15, hjust = 0.5,
-                                  color = default_font_color),
-        plot.subtitle = element_text(size = 10, hjust = 0.5,
-                                     color = default_font_color,
-                                     margin = margin(b = -0.1,
-                                                     t = -0.1,
-                                                     l = 2,
-                                                     unit = "cm"),
-                                     debug = F),
-        # captions
-        plot.caption = element_text(size = 7,
-                                    hjust = .5,
-                                    margin = margin(t = 0.2,
-                                                    b = 0,
-                                                    unit = "cm"),
-                                    color = "#939184"),
-        ...
-      )
- }
+  ## import data_for_plot file & duplicate
+  load(file = "data/data_for_plot.Rdata")
   
+  ## maps output
+
   output$map1 <- renderPlot({
-    data_for_plot_left <- data_for_plot %>%
-      dplyr::select(input$data_for_plot_left)
     
-    quant_list <- c("TenantH"    ,           "Subs"       ,           "Plus30"      ,          
-                    "MedRent"  , "AvRent"              ,  "MedMort"        ,       "AvMort"      ,          "MedVal", "AvVal",         "Owner"      ,           "Wmortg"       ,         "Plus30Own"            ,"CTIR"    ,           
-                    "Less30"        ,        "More30"  ,              "Househol_1"  ,
-                    "Suitable"     ,         "NonSuit","Under_5k_proportion" , "IN5k_10k_proportion" ,  "IN10k_15k_proportion",  "IN15k_proportion" ,     "IN20k_25k_proportion", "IN25k_30k_proportion" , "IN30k_35k_proportion"  ,"IN35k_40k_proportion" , "IN40k_45k_proportion", "IN45k_50k_proportion" , "IN50k_60k_proportion" , "IN60k_70k_proportion" , "IN70k_80k_proportion" , "IN80k_90k_proportion",  "IN90k_proportion"  ,    "INOver100k_proportion", "IN100k_125_proportion" ,"IN125k_150_proportion", "IN150k_200_proportion" ,"Over200k_proportion" ,  "Non_Im_proportion" ,"Imm_proportion"   ,     "Imm_5year_proportion" , "driver_proportion"  ,   "passenger_proportion" , "Pubtrans_proportion" ,  "Walked_proportion" ,    "Bicycle_proportion" ,   "Other_proportion" , "T_15_proportion"   ,    "B15_29_proportion" ,    "B30_44_proportion" ,    "O_60_proportion"  ,    "B_45_59_proportion" ,   "under_40K"    ,         "over_40K", "ale_tranis")
-    
-    data_for_plot_left %>% 
-      mutate_at(quant_list,
-                funs(quant3 = ntile(.,3))
-      ) 
-    
-    colnames(data_for_plot_left) <- c("left_variable",  "geometry")
-    ggplot(data_for_plot_left) +
-      geom_sf(
-        aes(
-          fill = as.factor(left_variable)
-        ),
-        # use thin white stroke for municipalities
-        color = "white",
-        size = 0.01
-      ) +
-      scale_fill_manual(values=rev(colors[c(1:3)]))+
-      theme_map()
-  })
+    # Get input data frame
+    data_for_plot %>%
+      select(input$data_for_plot_left) %>% 
+      set_names(c("left_variable", "geometry")) %>% 
+      # Send data frame to ggplot
+      map_function(left_variable, c("grey80", colour_scale[c(4,7)]))
+    })
   
   output$map2 <- renderPlot({
-    data_for_plot_right <- data_for_plot %>%
-      dplyr::select(input$data_for_plot_right)
-    
-    quant_list <- c("TenantH"    ,           "Subs"       ,           "Plus30"      ,          
-                    "MedRent"  , "AvRent"              ,  "MedMort"        ,       "AvMort"      ,          "MedVal", "AvVal",         "Owner"      ,           "Wmortg"       ,         "Plus30Own"            ,"CTIR"    ,           
-                    "Less30"        ,        "More30"  ,              "Househol_1"  ,
-                    "Suitable"     ,         "NonSuit","Under_5k_proportion" , "IN5k_10k_proportion" ,  "IN10k_15k_proportion",  "IN15k_proportion" ,     "IN20k_25k_proportion", "IN25k_30k_proportion" , "IN30k_35k_proportion"  ,"IN35k_40k_proportion" , "IN40k_45k_proportion", "IN45k_50k_proportion" , "IN50k_60k_proportion" , "IN60k_70k_proportion" , "IN70k_80k_proportion" , "IN80k_90k_proportion",  "IN90k_proportion"  ,    "INOver100k_proportion", "IN100k_125_proportion" ,"IN125k_150_proportion", "IN150k_200_proportion" ,"Over200k_proportion" ,  "Non_Im_proportion" ,"Imm_proportion"   ,     "Imm_5year_proportion" , "driver_proportion"  ,   "passenger_proportion" , "Pubtrans_proportion" ,  "Walked_proportion" ,    "Bicycle_proportion" ,   "Other_proportion" , "T_15_proportion"   ,    "B15_29_proportion" ,    "B30_44_proportion" ,    "O_60_proportion"  ,    "B_45_59_proportion" ,   "under_40K"    ,         "over_40K", "ale_tranis")
-    
-    data_for_plot_right %>% 
-      mutate_at(quant_list,
-                funs(quant3 = ntile(.,3))
-      ) 
-    colnames(data_for_plot_right) <- c("right_variable",  "geometry")
-    ggplot(data_for_plot_right) +
-      geom_sf(
-        aes(
-          fill = as.factor(right_variable)
-        ),
-        # use thin white stroke for municipalities
-        color = "white",
-        size = 0.01
-      ) +
-      scale_fill_manual(values=rev(colors[c(4:6)]))+
-      theme_map()
-
+    data_for_plot %>%
+      select(input$data_for_plot_right) %>% 
+      set_names(c("right_variable", "geometry")) %>% 
+      map_function(right_variable, c("grey80", colour_scale[c(2,3)]))
   })
   
   output$map3 <- renderPlot({
-    data_for_plot_bivariate <- 
+
+    data_for_map <-
       data_for_plot %>%
-      dplyr::select(input$data_for_plot_left, input$data_for_plot_right)
-    
-    if(length(colnames(data_for_plot_bivariate)) == 2){
-      data_for_plot_bivariate <- 
-        cbind(data_for_plot_bivariate[,1], data_for_plot_bivariate[,1:3])}
-    print(head(data_for_plot_bivariate))
-    colnames(data_for_plot_bivariate) <- 
-      c("left_variable", "right_variable", "geometry")
-    
-    data_for_plot_bivariate <- data_for_plot_bivariate %>%
-      mutate(group = paste(left_variable,
-                           right_variable,
-                           sep = " - ")) %>%
-      na.omit() %>% 
-      left_join(bivariate_color_scale, by = "group") 
+      select(input$data_for_plot_left, input$data_for_plot_right)
 
-    ggplot(data_for_plot_bivariate) +
-      geom_sf(
-        aes(
-          fill = as.factor(data_for_plot_bivariate$fill)
-        )
-        ,
-        # use thin white stroke for municipalities
-        color = "white",
-        size = 0.01
-      ) +
-      scale_fill_manual(values=rev(colors_bi)) +
-      theme_map()
-
+    # Case for two columns (including geometry)
+    if (length(data_for_map) == 2) {
+      NULL
+      
+      # Case for three columns (including geometry)
+      } else {
+        
+        data_for_map %>%
+          set_names(c("left_variable", "right_variable", "geometry")) %>%
+          filter(!is.na(left_variable), !is.na(right_variable)) %>% 
+          mutate(left_variable = ntile(left_variable, 3),
+                 right_variable = ntile(right_variable, 3),
+                 group = paste(left_variable, right_variable, sep = " - ")) %>% 
+          ggplot() +
+          geom_sf(aes(fill = as.factor(group)), colour = "transparent", size = 0) +
+          scale_fill_manual(values = colour_scale, na.value = "grey50") +
+          theme_map()
+        
+        }
   })
   
   output$hist1 <- renderPlot({
-    data_for_hist_bivariate <- 
     data_for_plot %>%
-    dplyr::select(input$data_for_hist_left, input$data_for_hist_right)
-    
-    if(length(colnames(data_for_plot_bivariate)) == 2){
-      data_for_plot_bivariate <- 
-        cbind(data_for_plot_bivariate[,1], data_for_plot_bivariate[,1:3])}
-    print(head(data_for_plot_bivariate))
-    colnames(data_for_plot_bivariate) <- 
-      c("left_variable", "right_variable", "geometry")
-  
-  ggplot(data_for_plot_bivariate) + geom_histogram(aes(left_variable))
-    
+      select(input$data_for_plot_left) %>% 
+      set_names(c("left_variable", "geometry")) %>% 
+      ggplot() +
+      geom_histogram(aes(left_variable),
+                     fill = "#AE3A4E") +
+      theme_minimal() +
+      theme(axis.title.y = element_blank(),
+            axis.text.y = element_blank(),
+            axis.ticks.y = element_blank(),
+            panel.background = element_rect(fill = "white", colour = "transparent"),
+            panel.grid.minor = element_blank(),
+            panel.grid.major = element_blank()
+      )
+
   })
-  
+
   output$hist2 <- renderPlot({
-    data_for_plot_bivariate <- 
-      data_for_plot %>%
-      dplyr::select(input$data_for_plot_left, input$data_for_plot_right)
-    
-    if(length(colnames(data_for_plot_bivariate)) == 2){
-      data_for_plot_bivariate <- 
-        cbind(data_for_plot_bivariate[,1], data_for_plot_bivariate[,1:3])}
-    print(head(data_for_plot_bivariate))
-    colnames(data_for_plot_bivariate) <- 
-      c("left_variable", "right_variable", "geometry")
-    
-    ggplot(data_for_plot_bivariate) + geom_histogram(aes(right_variable))
-    
-  })
+    data_for_plot %>%
+      select(input$data_for_plot_right) %>% 
+      set_names(c("right_variable", "geometry")) %>% 
+      ggplot() +
+      geom_histogram(aes(right_variable),
+                     fill = "#4885C1") +
+      theme_minimal() +
+      theme(axis.title.y = element_blank(),
+            axis.text.y = element_blank(),
+            axis.ticks.y = element_blank(),
+            panel.background = element_rect(fill = "white", colour = "transparent"),
+            panel.grid.minor = element_blank(),
+            panel.grid.major = element_blank()
+      )
   
 })
   
+  # output$descript1 <- renderPrint({
+  #   
+  #   min(st_drop_geometry(data_for_plot)
+  #       [input$data_for_plot_left], na.rm = TRUE)
+ 
+  #   
+  #   
+  #     data_for_stats_left <- 
+  #       data_for_plot %>%
+  #       select(input$data_for_plot_left) %>% 
+  #       set_names(c("left_variable", "geometry"))
+  #     
+  #     tibble(
+  #       "Descriptive" = "Min",
+  #       "Value" = min(data_for_stats_left$left_variable, na.rm = TRUE) %>% 
+  #         as.data.frame())
+  #     
+    # })
+
+    
+
+  output$scatterplot <- renderPlot({
+    data_for_map <-
+    data_for_plot %>%
+    select(input$data_for_plot_left, input$data_for_plot_right)
+  
+  # Case for two columns (including geometry)
+  if (length(data_for_map) == 2) {
+    NULL
+    
+    # Case for three columns (including geometry)
+  } else {
+    
+    data_for_map %>%
+      set_names(c("left_variable", "right_variable", "geometry")) %>%
+      ggplot() +
+      geom_point(aes(left_variable, right_variable)) +
+      theme_minimal() +
+      theme(panel.background = element_rect(fill = "white", colour = "transparent"),
+            panel.grid.minor = element_blank(),
+            panel.grid.major = element_blank()
+      )
+    
+  }
+    
+  })  
+  
+}) 
+    
