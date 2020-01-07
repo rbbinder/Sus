@@ -153,8 +153,6 @@ shinyServer(function(input, output, session) {
       ggplot() +
       geom_histogram(aes(left_variable),
                      fill = "#AE3A4E") +
-      # xlim(NA, quantile(data_for_hist_left$left_variable, 0.992)) +
-      # ylim(NA, quantile(data_for_hist_left$left_variable, 0.992)) +
       theme_minimal() +
       theme(axis.title.y = element_blank(),
             axis.text.y = element_blank(),
@@ -179,8 +177,6 @@ shinyServer(function(input, output, session) {
       ggplot() +
       geom_histogram(aes(right_variable),
                      fill = "#4885C1") +
-      # xlim(NA, quantile(data_for_hist_right$right_variable, 0.992)) +
-      # ylim(NA, quantile(data_for_hist_right$right_variable, 0.992)) +
       theme_minimal() +
       theme(axis.title.y = element_blank(),
             axis.text.y = element_blank(),
