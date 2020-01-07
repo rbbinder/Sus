@@ -83,33 +83,31 @@ row_selector <-
 row_single_maps <- 
   fluidRow(
     tags$style(type = "text/css", "html, body {width:100%;height:100%}"),
-    column(6, plotOutput("map1"), height=300), 
-    column(6, plotOutput("map2"), height=300))
+    column(6, plotOutput("map1"), height = 300), 
+    column(6, plotOutput("map2"), height = 300))
 
 row_bivariate_map <-
   fluidRow(
     tags$style(type = "text/css", "html, body {width:100%;height:100%}"),
-    column(12, h3("Bivariate Map: Variables 1 and 2"), plotOutput("map3"),
-           height=600))
+    h3("Bivariate map"),
+    column(8, plotOutput("map3", height = 800)),
+    column(4, plotOutput("scatterplot", height = 800))
+    )
 
 row_descriptive <-
   fluidRow(
-    tags$style(type = "text/css", "html, body {width:100%;height:100%}"),
-    column(3, tableOutput("descript1"), height=200),
-    column(3, plotOutput("hist1"), height=200),
-    column(3, tableOutput("descript2"), height=200),
-    column(3, plotOutput("hist2"), height=200))
-
-row_scatterplot <- 
-  fluidRow(
-    tags$style(type = "text/css", "html, body {width:100%;height:100%}"),
-    column(12, h3("Bivariate Scatterplot: Variables 1 and 2"), plotOutput("scatterplot"),
-           height=600))
+    tags$style(type = "text/css", "html, body {width:100%;height:50%}"),
+    column(2, tableOutput("descript1")),
+    column(4, plotOutput("hist1", height = 200)),
+    column(2, tableOutput("descript2")),
+    column(4, plotOutput("hist2", height = 200))
+    )
 
 
 ### shinyUI ####################################################################
 
-shinyUI(dashboardPage(
+ui <- 
+  dashboardPage(
   skin="black", 
   dashboardHeader(title = "Bivariate Analysis: Sustainability Variables"),
   dashboardSidebar(disable=TRUE, 
@@ -118,11 +116,10 @@ shinyUI(dashboardPage(
                                         icon = icon("book")))),
   dashboardBody(tabItems(tabItem(tabName ="maps",
                                  row_selector,                    
-                                 row_single_maps,
                                  row_descriptive,
-                                 row_bivariate_map,
-                                 row_scatterplot
-                                 )))))
+                                 row_single_maps,
+                                 row_bivariate_map
+                                 ))))
 
 
 

@@ -1,36 +1,37 @@
+#### SHINY BIVARIATE MAPPING APP ###############################################
+
+### Load libraries #############################################################
+
 require(shiny)
 require(shinydashboard)
-require(raster)
 require(ape)
 require(spdep)
 require(leaflet)
 require(tidyverse)
-require(ggplot2)
-
 
 
 ### Colours ####################################################################
 
 colour_scale <- 
-  # Low income
   c("#CABED0", "#89A1C8", "#4885C1", 
-    # Medium income
     "#BC7C8F", "#806A8A", "#435786", 
-    # High income
     "#AE3A4E", "#77324C", "#3F2949")
 
+colour_left <- c("grey80", colour_scale[c(4,7)])
 
-### Theme function #############################################################
+colour_right <- c("grey80", colour_scale[c(2,3)])
+
+
+### Theme functions ############################################################
 
 theme_map <- function(...) {
-  default_background_colour <- "transparent"
-  default_font_colour <- "black"
-  default_font_family <- "Helvetica"
+  default_bg <- "transparent"
+  default_font_col <- "black"
+  default_font <- "Helvetica"
   
   theme_minimal() +
     theme(
-      text = element_text(family = default_font_family,
-                          colour = default_font_colour),
+      text = element_text(family = default_font, colour = default_font_col),
       # remove all axes
       axis.line = element_blank(),
       axis.text.x = element_blank(),
@@ -40,12 +41,9 @@ theme_map <- function(...) {
       panel.grid.major = element_blank(),
       panel.grid.minor = element_blank(),
       # background colours
-      plot.background = element_rect(fill = default_background_colour,
-                                     colour = NA),
-      panel.background = element_rect(fill = default_background_colour,
-                                      colour = NA),
-      legend.background = element_rect(fill = default_background_colour,
-                                       colour = NA),
+      plot.background = element_rect(fill = default_bg, colour = NA),
+      panel.background = element_rect(fill = default_bg, colour = NA),
+      legend.background = element_rect(fill = default_bg, colour = NA),
       legend.position = "none",
       # borders and margins
       plot.margin = unit(c(.5, .5, .2, .5), "cm"),
@@ -53,30 +51,36 @@ theme_map <- function(...) {
       panel.spacing = unit(c(-.1, 0.2, .2, 0.2), "cm"),
       # titles
       legend.title = element_text(size = 11),
-      legend.text = element_text(size = 22, hjust = 0,
-                                 colour = default_font_colour),
-      plot.title = element_text(size = 15, hjust = 0.5,
-                                colour = default_font_colour),
-      plot.subtitle = element_text(size = 10, hjust = 0.5,
-                                   colour = default_font_colour,
-                                   margin = margin(b = -0.1,
-                                                   t = -0.1,
-                                                   l = 2,
-                                                   unit = "cm"),
-                                   debug = F),
+      legend.text = element_text(size = 22, hjust = 0, colour = default_font_col),
+      plot.title = element_text(size = 15, hjust = 0.5, colour = default_font_col),
+      plot.subtitle = element_text(size = 10, hjust = 0.5, 
+                                   colour = default_font_col,
+                                   margin = margin(b = -0.1, t = -0.1,
+                                                   l = 2, unit = "cm")),
       # captions
-      plot.caption = element_text(size = 7,
-                                  hjust = .5,
-                                  margin = margin(t = 0.2,
-                                                  b = 0,
-                                                  unit = "cm"),
+      plot.caption = element_text(size = 7, hjust = .5,
+                                  margin = margin(t = 0.2, b = 0, unit = "cm"),
                                   colour = "#939184"),
       ...
     )
 }
 
+theme_histogram <- function(...) {
+  theme_minimal() +
+    theme(legend.position = "none", 
+          axis.title.y = element_blank(),
+          axis.text.y = element_blank(),
+          axis.ticks.y = element_blank(),
+          panel.background = element_rect(fill = "white", 
+                                          colour = "transparent"),
+          panel.grid.minor = element_blank(),
+          panel.grid.major = element_blank(),
+          ...
+          )
+}
 
-### Simple map function ########################################################
+
+### Univariate map function ####################################################
 
 map_function <- function(data, variable_name, colours) {
   
@@ -88,167 +92,156 @@ map_function <- function(data, variable_name, colours) {
 }
 
 
-### shinyServer ################################################################
+### Server #####################################################################
 
-shinyServer(function(input, output, session) {
+server <- function(input, output, session) {
   
-  ## import data_for_plot file & duplicate
+  ## Import data_for_plot file
   load(file = "data/data_for_plot.Rdata")
   
-  ## maps output
+  
+  ## Create reactive version of table
+  data_processed <- 
+    reactive({
+    
+      data_processed <- 
+        data_for_plot %>% 
+        select(input$data_for_plot_left, input$data_for_plot_right)
+      
+      
+      ## If the two inputs are the same, duplicate it
+      
+      if (length(data_processed) == 2) {
+        data_processed <- 
+          data_processed %>% 
+          set_names(c("left_variable", "geometry")) %>% 
+          mutate(right_variable = left_variable)
+      } else {
+        data_processed <- 
+          data_processed %>% 
+          set_names(c("left_variable", "right_variable", "geometry"))
+      }
+      
+      ## Add tertiles
+      
+      data_processed <- 
+        data_processed %>% 
+        mutate(group = paste(ntile(left_variable, 3), 
+                             ntile(right_variable, 3), 
+                             sep = " - "),
+               group = factor(group, levels = c("1 - 1", "1 - 2", "1 - 3",
+                                                "2 - 1", "2 - 2", "2 - 3",
+                                                "3 - 1", "3 - 2", "3 - 3")))  
+    
+      data_processed
+  })
+    
+  
+  
+  ## Map outputs
 
   output$map1 <- renderPlot({
     
-    # Get input data frame
-    data_for_plot %>%
-      select(input$data_for_plot_left) %>% 
-      set_names(c("left_variable", "geometry")) %>% 
-      # Send data frame to ggplot
-      map_function(left_variable, c("grey80", colour_scale[c(4,7)]))
+    data_processed() %>%
+      map_function(left_variable, colour_left)
+    
     })
   
   output$map2 <- renderPlot({
-    data_for_plot %>%
-      select(input$data_for_plot_right) %>% 
-      set_names(c("right_variable", "geometry")) %>% 
-      map_function(right_variable, c("grey80", colour_scale[c(2,3)]))
+    
+    data_processed() %>%
+      map_function(right_variable, colour_right)
+    
   })
   
   output$map3 <- renderPlot({
-
-    data_for_map <-
-      data_for_plot %>%
-      select(input$data_for_plot_left, input$data_for_plot_right)
-
-    # Case for two columns (including geometry)
-    if (length(data_for_map) == 2) {
-      NULL
-      
-      # Case for three columns (including geometry)
-      } else {
+    
+    data_processed() %>%
+      ggplot() +
+      geom_sf(aes(fill = group), colour = "transparent", size = 0) +
+      scale_fill_manual(values = colour_scale, na.value = "grey50") +
+      theme_map()
         
-        data_for_map %>%
-          set_names(c("left_variable", "right_variable", "geometry")) %>%
-          filter(!is.na(left_variable), !is.na(right_variable)) %>% 
-          mutate(left_variable = ntile(left_variable, 3),
-                 right_variable = ntile(right_variable, 3),
-                 group = paste(left_variable, right_variable, sep = " - ")) %>% 
-          ggplot() +
-          geom_sf(aes(fill = as.factor(group)), colour = "transparent", size = 0) +
-          scale_fill_manual(values = colour_scale, na.value = "grey50") +
-          theme_map()
-        
-        }
-  })
+  }, height = 800)
   
   output$hist1 <- renderPlot({
     
-    data_for_hist_left <- data_for_plot %>%
-      select(input$data_for_plot_left) %>% 
-      set_names(c("left_variable", "geometry"))
-    
-    data_for_hist_left %>% 
-      filter(data_for_hist_left$left_variable < 
-               quantile(data_for_hist_left$left_variable, 0.99)) %>% 
+    data_processed() %>% 
+      filter(left_variable < 
+               quantile(data_processed()$left_variable, 0.99, na.rm = TRUE)) %>% 
       ggplot() +
-      geom_histogram(aes(left_variable),
-                     fill = "#AE3A4E") +
-      theme_minimal() +
-      theme(axis.title.y = element_blank(),
-            axis.text.y = element_blank(),
-            axis.ticks.y = element_blank(),
-            panel.background = element_rect(fill = "white", colour = "transparent"),
-            panel.grid.minor = element_blank(),
-            panel.grid.major = element_blank()
-      )
+      geom_histogram(aes(left_variable,
+                         fill = as.factor(ntile(left_variable, 3)))) +
+      scale_x_continuous(name = input$data_for_plot_left) +
+      scale_fill_manual(values = colour_left, na.value = "grey50") +
+      theme_histogram()
+    
 
-  })
+  }, height = 200)
   
-
   output$hist2 <- renderPlot({
     
-      data_for_hist_right <- data_for_plot %>%
-      select(input$data_for_plot_right) %>% 
-      set_names(c("right_variable", "geometry")) 
-      
-      data_for_hist_right %>% 
-      filter(data_for_hist_right$right_variable < 
-               quantile(data_for_hist_right$right_variable, 0.99)) %>% 
+    data_processed() %>% 
+      filter(right_variable < quantile(data_processed()$right_variable, 0.99,
+                                       na.rm = TRUE)) %>% 
       ggplot() +
-      geom_histogram(aes(right_variable),
-                     fill = "#4885C1") +
-      theme_minimal() +
-      theme(axis.title.y = element_blank(),
-            axis.text.y = element_blank(),
-            axis.ticks.y = element_blank(),
-            panel.background = element_rect(fill = "white", colour = "transparent"),
-            panel.grid.minor = element_blank(),
-            panel.grid.major = element_blank()
-      )
-  
-})
+      geom_histogram(aes(right_variable, 
+                         fill = as.factor(ntile(right_variable, 3)))) +
+      scale_x_continuous(name = input$data_for_plot_right) +
+      scale_fill_manual(values = colour_right, na.value = "grey50") +
+      theme_histogram()
+    
+}, height = 200)
   
   output$descript1 <- renderTable({
 
-      data_for_stats_left <-
-        data_for_plot %>%
-        select(input$data_for_plot_left) %>%
-        set_names(c("left_variable", "geometry"))
-
       tibble(
-        "Descriptive" = c("Min", "Max", "Median", "Mean", "Sd"),
-        "Value" = c(min(data_for_stats_left$left_variable, na.rm = TRUE), 
-                    max(data_for_stats_left$left_variable, na.rm = TRUE),
-                    median(data_for_stats_left$left_variable),
-                    mean(data_for_stats_left$left_variable),
-                    sd(data_for_stats_left$left_variable)) %>%
+        "Descriptive" = c(
+          "Minimum", "Maximum", "Median", "Mean", "Standard deviation"),
+        "Value" = c(min(data_processed()$left_variable, na.rm = TRUE), 
+                    max(data_processed()$left_variable, na.rm = TRUE),
+                    median(data_processed()$left_variable, na.rm = TRUE),
+                    mean(data_processed()$left_variable, na.rm = TRUE),
+                    sd(data_processed()$left_variable, na.rm = TRUE)) %>%
           as.data.frame())
 
   })
 
   output$descript2 <- renderTable({
     
-    data_for_stats_right <-
-      data_for_plot %>%
-      select(input$data_for_plot_right) %>%
-      set_names(c("right_variable", "geometry"))
-    
     tibble(
-      "Descriptive" = c("Min", "Max", "Median", "Mean", "Sd"),
-      "Value" = c(min(data_for_stats_right$right_variable, na.rm = TRUE), 
-                  max(data_for_stats_right$right_variable, na.rm = TRUE),
-                  median(data_for_stats_right$right_variable),
-                  mean(data_for_stats_right$right_variable),
-                  sd(data_for_stats_right$right_variable)) %>%
+      "Descriptive" = c(
+        "Minimum", "Maximum", "Median", "Mean", "Standard deviation"),
+      "Value" = c(min(data_processed()$right_variable, na.rm = TRUE), 
+                  max(data_processed()$right_variable, na.rm = TRUE),
+                  median(data_processed()$right_variable, na.rm = TRUE),
+                  mean(data_processed()$right_variable, na.rm = TRUE),
+                  sd(data_processed()$right_variable, na.rm = TRUE)) %>%
         as.data.frame())
+    
     
   })
 
   output$scatterplot <- renderPlot({
-    data_for_map <-
-    data_for_plot %>%
-    select(input$data_for_plot_left, input$data_for_plot_right)
-  
-  # Case for two columns (including geometry)
-  if (length(data_for_map) == 2) {
-    NULL
     
-    # Case for three columns (including geometry)
-  } else {
-    
-    data_for_map %>%
-      set_names(c("left_variable", "right_variable", "geometry")) %>%
+    data_processed() %>% 
       ggplot() +
-      geom_point(aes(left_variable, right_variable)) +
+      geom_point(aes(left_variable, right_variable, colour = group)) +
+      geom_smooth(aes(left_variable, right_variable), colour = "grey50", 
+                  se = FALSE) +
+      scale_x_continuous(name = input$data_for_plot_left) +
+      scale_y_continuous(name = input$data_for_plot_right) +
+      scale_colour_manual(values = colour_scale, na.value = "grey50") +
       theme_minimal() +
-      theme(panel.background = element_rect(fill = "white", colour = "transparent"),
+      theme(legend.position = "none", 
+            panel.background = element_rect(fill = "white", 
+                                            colour = "transparent"),
             panel.grid.minor = element_blank(),
             panel.grid.major = element_blank()
       )
-    
-  }
-    
+
   })  
   
-}) 
-    
+}
+
+
