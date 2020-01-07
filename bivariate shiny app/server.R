@@ -148,11 +148,13 @@ shinyServer(function(input, output, session) {
       set_names(c("left_variable", "geometry"))
     
     data_for_hist_left %>% 
+      filter(data_for_hist_left$left_variable < 
+               quantile(data_for_hist_left$left_variable, 0.99)) %>% 
       ggplot() +
       geom_histogram(aes(left_variable),
                      fill = "#AE3A4E") +
-      xlim(NA, quantile(data_for_hist_left$left_variable, 0.992)) +
-      ylim(NA, quantile(data_for_hist_left$left_variable, 0.992)) +
+      # xlim(NA, quantile(data_for_hist_left$left_variable, 0.992)) +
+      # ylim(NA, quantile(data_for_hist_left$left_variable, 0.992)) +
       theme_minimal() +
       theme(axis.title.y = element_blank(),
             axis.text.y = element_blank(),
@@ -169,14 +171,16 @@ shinyServer(function(input, output, session) {
     
       data_for_hist_right <- data_for_plot %>%
       select(input$data_for_plot_right) %>% 
-      set_names(c("right_variable", "geometry"))
+      set_names(c("right_variable", "geometry")) 
       
       data_for_hist_right %>% 
+      filter(data_for_hist_right$right_variable < 
+               quantile(data_for_hist_right$right_variable, 0.99)) %>% 
       ggplot() +
       geom_histogram(aes(right_variable),
                      fill = "#4885C1") +
-      xlim(NA, quantile(data_for_hist_right$right_variable, 0.992)) +
-      ylim(NA, quantile(data_for_hist_right$right_variable, 0.992)) +
+      # xlim(NA, quantile(data_for_hist_right$right_variable, 0.992)) +
+      # ylim(NA, quantile(data_for_hist_right$right_variable, 0.992)) +
       theme_minimal() +
       theme(axis.title.y = element_blank(),
             axis.text.y = element_blank(),
