@@ -154,15 +154,33 @@ server <- function(input, output, session) {
     
   })
   
-  output$map3 <- renderPlot({
+  # output$map3 <- renderPlot({
+  #   
+  #   data_processed() %>%
+  #     ggplot() +
+  #     geom_sf(aes(fill = group), colour = "transparent", size = 0) +
+  #     scale_fill_manual(values = colour_scale, na.value = "grey50") +
+  #     theme_map()
+  #       
+  # }, height = 800)
+  
+  output$map3 <- renderLeaflet({
     
-    data_processed() %>%
-      ggplot() +
-      geom_sf(aes(fill = group), colour = "transparent", size = 0) +
-      scale_fill_manual(values = colour_scale, na.value = "grey50") +
-      theme_map()
-        
-  }, height = 800)
+    # Add leaflet output - this without the proxy should produce the blank basemap
+    leaflet() %>% 
+      addTiles() %>% 
+      setView(-73.65, 45.5505, zoom = 10) %>% 
+      addProviderTiles(providers$CartoDB.Positron) %>% 
+      addTiles(data_processed)
+
+    # Adding this section gives an error
+
+      # leafletProxy("map3") %>% 
+      #   addPolygons(data = data_processed$group,
+      #               fill = colour_scale)
+    
+
+  })
   
   output$hist1 <- renderPlot({
     
