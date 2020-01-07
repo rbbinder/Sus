@@ -142,12 +142,17 @@ shinyServer(function(input, output, session) {
   })
   
   output$hist1 <- renderPlot({
-    data_for_plot %>%
+    
+    data_for_hist_left <- data_for_plot %>%
       select(input$data_for_plot_left) %>% 
-      set_names(c("left_variable", "geometry")) %>% 
+      set_names(c("left_variable", "geometry"))
+    
+    data_for_hist_left %>% 
       ggplot() +
       geom_histogram(aes(left_variable),
                      fill = "#AE3A4E") +
+      xlim(NA, quantile(data_for_hist_left$left_variable, 0.992)) +
+      ylim(NA, quantile(data_for_hist_left$left_variable, 0.992)) +
       theme_minimal() +
       theme(axis.title.y = element_blank(),
             axis.text.y = element_blank(),
@@ -158,14 +163,20 @@ shinyServer(function(input, output, session) {
       )
 
   })
+  
 
   output$hist2 <- renderPlot({
-    data_for_plot %>%
+    
+      data_for_hist_right <- data_for_plot %>%
       select(input$data_for_plot_right) %>% 
-      set_names(c("right_variable", "geometry")) %>% 
+      set_names(c("right_variable", "geometry"))
+      
+      data_for_hist_right %>% 
       ggplot() +
       geom_histogram(aes(right_variable),
                      fill = "#4885C1") +
+      xlim(NA, quantile(data_for_hist_right$right_variable, 0.992)) +
+      ylim(NA, quantile(data_for_hist_right$right_variable, 0.992)) +
       theme_minimal() +
       theme(axis.title.y = element_blank(),
             axis.text.y = element_blank(),
@@ -177,26 +188,41 @@ shinyServer(function(input, output, session) {
   
 })
   
-  # output$descript1 <- renderPrint({
-  #   
-  #   min(st_drop_geometry(data_for_plot)
-  #       [input$data_for_plot_left], na.rm = TRUE)
- 
-  #   
-  #   
-  #     data_for_stats_left <- 
-  #       data_for_plot %>%
-  #       select(input$data_for_plot_left) %>% 
-  #       set_names(c("left_variable", "geometry"))
-  #     
-  #     tibble(
-  #       "Descriptive" = "Min",
-  #       "Value" = min(data_for_stats_left$left_variable, na.rm = TRUE) %>% 
-  #         as.data.frame())
-  #     
-    # })
+  output$descript1 <- renderTable({
 
+      data_for_stats_left <-
+        data_for_plot %>%
+        select(input$data_for_plot_left) %>%
+        set_names(c("left_variable", "geometry"))
+
+      tibble(
+        "Descriptive" = c("Min", "Max", "Median", "Mean", "Sd"),
+        "Value" = c(min(data_for_stats_left$left_variable, na.rm = TRUE), 
+                    max(data_for_stats_left$left_variable, na.rm = TRUE),
+                    median(data_for_stats_left$left_variable),
+                    mean(data_for_stats_left$left_variable),
+                    sd(data_for_stats_left$left_variable)) %>%
+          as.data.frame())
+
+  })
+
+  output$descript2 <- renderTable({
     
+    data_for_stats_right <-
+      data_for_plot %>%
+      select(input$data_for_plot_right) %>%
+      set_names(c("right_variable", "geometry"))
+    
+    tibble(
+      "Descriptive" = c("Min", "Max", "Median", "Mean", "Sd"),
+      "Value" = c(min(data_for_stats_right$right_variable, na.rm = TRUE), 
+                  max(data_for_stats_right$right_variable, na.rm = TRUE),
+                  median(data_for_stats_right$right_variable),
+                  mean(data_for_stats_right$right_variable),
+                  sd(data_for_stats_right$right_variable)) %>%
+        as.data.frame())
+    
+  })
 
   output$scatterplot <- renderPlot({
     data_for_map <-

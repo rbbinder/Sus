@@ -95,9 +95,9 @@ row_bivariate_map <-
 row_descriptive <-
   fluidRow(
     tags$style(type = "text/css", "html, body {width:100%;height:100%}"),
-    # column(3, plotOutput("descript1"), height=200),
+    column(3, tableOutput("descript1"), height=200),
     column(3, plotOutput("hist1"), height=200),
-    # column(3, plotOutput("descript2"), height=200),
+    column(3, tableOutput("descript2"), height=200),
     column(3, plotOutput("hist2"), height=200))
 
 row_scatterplot <- 
