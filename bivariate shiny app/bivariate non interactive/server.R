@@ -76,7 +76,7 @@ theme_histogram <- function(...) {
           panel.grid.minor = element_blank(),
           panel.grid.major = element_blank(),
           ...
-          )
+    )
 }
 
 
@@ -144,50 +144,50 @@ server <- function(input, output, session) {
     } else {
       
       wait <- FALSE
-  }})
+    }})
   
   ## Create reactive version of table
   data_processed <- 
     reactive({
-    
-        data_processed <- 
-          data_for_plot %>% 
-          select(input$data_for_plot_left, input$data_for_plot_right) %>% 
-          st_transform(4326)
-        
-        
-        ## If the two inputs are the same, duplicate it
-        
-        if (length(data_processed) == 2) {
-          data_processed <- 
-            data_processed %>% 
-            set_names(c("left_variable", "geometry")) %>% 
-            mutate(right_variable = left_variable)
-        } else {
-          data_processed <- 
-            data_processed %>% 
-            set_names(c("left_variable", "right_variable", "geometry"))
-        }
-        
-        ## Add tertiles
-        
+      
+      data_processed <- 
+        data_for_plot %>% 
+        select(input$data_for_plot_left, input$data_for_plot_right) %>% 
+        st_transform(4326)
+      
+      
+      ## If the two inputs are the same, duplicate it
+      
+      if (length(data_processed) == 2) {
         data_processed <- 
           data_processed %>% 
-          mutate(group = paste(ntile(left_variable, 3), 
-                               ntile(right_variable, 3), 
-                               sep = " - "),
-                 group = factor(group, levels = c("1 - 1", "1 - 2", "1 - 3",
-                                                  "2 - 1", "2 - 2", "2 - 3",
-                                                  "3 - 1", "3 - 2", "3 - 3")))  
-        
-        data_processed
+          set_names(c("left_variable", "geometry")) %>% 
+          mutate(right_variable = left_variable)
+      } else {
+        data_processed <- 
+          data_processed %>% 
+          set_names(c("left_variable", "right_variable", "geometry"))
+      }
       
-  })
-    
+      ## Add tertiles
+      
+      data_processed <- 
+        data_processed %>% 
+        mutate(group = paste(ntile(left_variable, 3), 
+                             ntile(right_variable, 3), 
+                             sep = " - "),
+               group = factor(group, levels = c("1 - 1", "1 - 2", "1 - 3",
+                                                "2 - 1", "2 - 2", "2 - 3",
+                                                "3 - 1", "3 - 2", "3 - 3")))  
+      
+      data_processed
+      
+    })
+  
   
   
   ## Map outputs
-
+  
   output$map1 <- renderPlot({
     
     if (wait()){
@@ -198,7 +198,7 @@ server <- function(input, output, session) {
     }
     
     
-    })
+  })
   
   output$map2 <- renderPlot({
     
@@ -211,37 +211,21 @@ server <- function(input, output, session) {
     
   })
   
-  # output$map3 <- renderPlot({
-  #   
-  #   data_processed() %>%
-  #     ggplot() +
-  #     geom_sf(aes(fill = group), colour = "transparent", size = 0) +
-  #     scale_fill_manual(values = colour_scale, na.value = "grey50") +
-  #     theme_map()
-  #       
-  # }, height = 800)
-  
-  output$map3 <- renderLeaflet({
+  output$map3 <- renderPlot({
     
     if (wait()){
       NULL
     } else {
       
-      # Add leaflet output - this without the proxy should produce the blank basemap
-      leaflet() %>% 
-        addTiles() %>% 
-        setView(-73.70715, 45.572605, zoom = 11) %>%
-        # fitBounds(-74.03534, 45.34213, -73.37896, 45.80308) %>% 
-        addProviderTiles(providers$CartoDB.Positron) %>% 
-        addPolygons(data = data_processed(),
-                    fillColor = ~pal(data_processed()$group),
-                    fillOpacity = 0.95,
-                    color = "white",
-                    opacity = 0,
-                    weight = 0)
+      data_processed() %>%
+        ggplot() +
+        geom_sf(aes(fill = group), colour = "transparent", size = 0) +
+        scale_fill_manual(values = colour_scale, na.value = "grey50") +
+        theme_map()
     }
-
-  })
+    
+    }, height = 800)
+    
   
   output$hist1 <- renderPlot({
     
@@ -279,10 +263,10 @@ server <- function(input, output, session) {
     }
     
     
-}, height = 200)
+  }, height = 200)
   
   output$descript1 <- renderTable({
-
+    
     if (wait()){
       NULL
     } else {
@@ -296,9 +280,9 @@ server <- function(input, output, session) {
                     sd(data_processed()$left_variable, na.rm = TRUE)) %>%
           as.data.frame())
     }
-      
+    
   })
-
+  
   output$descript2 <- renderTable({
     
     if (wait()){
@@ -316,7 +300,7 @@ server <- function(input, output, session) {
     }
     
   })
-
+  
   output$scatterplot <- renderPlot({
     
     if (wait()){
@@ -339,8 +323,8 @@ server <- function(input, output, session) {
               panel.grid.major = element_blank()
         )
     }
-   
-
+    
+    
   })  
   
 }
